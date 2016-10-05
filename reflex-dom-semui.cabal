@@ -19,10 +19,11 @@ library
   build-depends:
       base
     , containers
+    , data-default
     , ghcjs-dom
     , mtl
-    , reflex
-    , reflex-dom
+    , reflex     >= 0.5 && < 0.6
+    , reflex-dom >= 0.4 && < 0.5
     , text
 
   if impl(ghcjs)
