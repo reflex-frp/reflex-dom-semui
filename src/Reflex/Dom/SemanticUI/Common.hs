@@ -15,14 +15,19 @@
 module Reflex.Dom.SemanticUI.Common where
 
 ------------------------------------------------------------------------------
+import           Data.Default
 import           Data.Text (Text)
 import qualified Data.Text as T
+import           Reflex.Dom
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
 -- | Temporary...will be moved out of here eventually.
 tshow :: Show a => a -> Text
 tshow = T.pack . show
+
+instance (Default a, Reflex t) => Default (Dynamic t a) where
+  def = constDyn def
 
 ------------------------------------------------------------------------------
 -- | A type class for converting data types into appropriate  Semantic UI
@@ -64,6 +69,9 @@ instance UiClassText UiColor where
 
 class UiHasColor a where
   uiSetColor :: UiColor -> a -> a
+
+instance (Reflex t, UiHasColor a) => UiHasColor (Dynamic t a) where
+  uiSetColor c = fmap (uiSetColor c)
 
 red, orange, yellow, olive, green, teal, blue, violet, purple, pink, brown, grey, black
   :: UiHasColor a => a -> a
@@ -124,6 +132,9 @@ instance UiClassText UiInverted where
 class UiHasInverted a where
   inverted :: a -> a
 
+instance (Reflex t, UiHasInverted a) => UiHasInverted (Dynamic t a) where
+  inverted = fmap inverted
+
 ------------------------------------------------------------------------------
 data UiActivation
   = UiActive
@@ -165,6 +176,9 @@ instance UiClassText UiSize where
 
 class UiHasSize a where
   uiSetSize :: UiSize -> a -> a
+
+instance (Reflex t, UiHasSize a) => UiHasSize (Dynamic t a) where
+  uiSetSize c = fmap (uiSetSize c)
 
 mini, tiny, small, medium, large, big, huge, massive :: UiHasSize a => a -> a
 mini = uiSetSize UiMini
