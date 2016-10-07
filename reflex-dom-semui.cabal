@@ -6,15 +6,23 @@ author:              Doug Beardsley
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
+extra-source-files:  include/foreign-compat.h
 
 library
   hs-source-dirs: src
+  include-dirs: include
   js-sources:
     -- lib/jquery.min.js,
     lib/semantic.min.js
 
   exposed-modules:
     Reflex.Dom.SemanticUI
+
+  other-modules:
+    GHCJS.Compat
+    Reflex.Dom.SemanticUI.Button
+    Reflex.Dom.SemanticUI.Common
+    Reflex.Dom.SemanticUI.Dropdown
 
   build-depends:
       base
@@ -27,10 +35,14 @@ library
     , text
 
   if impl(ghcjs)
+    hs-source-dirs: src-ghcjs
     build-depends: ghcjs-base
+  else
+    hs-source-dirs: src-ghc
 
   ghc-options: -Wall -fno-warn-unused-do-bind -fno-warn-orphans
   cpp-options: -D_GHCJS_ -DGHCJS_GC_INTERVAL=60000
 
   default-language:    Haskell2010
-
+  default-extensions:
+    CPP

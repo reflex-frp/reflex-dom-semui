@@ -1,5 +1,4 @@
 {-# LANGUAGE ConstraintKinds          #-}
-{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -11,6 +10,8 @@
 {-# LANGUAGE ScopedTypeVariables      #-}
 {-# LANGUAGE TypeFamilies             #-}
 {-# LANGUAGE UndecidableInstances     #-}
+
+#include "foreign-compat.h"
 
 module Reflex.Dom.SemanticUI.Dropdown where
 
@@ -24,34 +25,23 @@ import qualified Data.Map as M
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           GHCJS.DOM.Types hiding (Event, Text)
-#ifdef ghcjs_HOST_OS
-import           GHCJS.Foreign.Callback
-import           GHCJS.Foreign
-import           GHCJS.Marshal.Internal
-import           GHCJS.Types
-#endif
 import           Reflex
 --import           Reflex.Host.Class
 import           Reflex.Dom hiding (fromJSString)
 ------------------------------------------------------------------------------
+import           GHCJS.Compat
 import           Reflex.Dom.SemanticUI.Common (tshow)
 ------------------------------------------------------------------------------
 
 
 ------------------------------------------------------------------------------
 activateSemUiDropdown :: Text -> IO ()
-#ifdef ghcjs_HOST_OS
 activateSemUiDropdown = js_activateSemUiDropdown . toJSString
 
-foreign import javascript unsafe
-  "$($1).dropdown({fullTextSearch: true});"
-  js_activateSemUiDropdown :: JSString -> IO ()
-#else
-activateSemUiDropdown =
-  error "activateSemUiDropdown: can only be used with GHCJS"
-#endif
-
+FOREIGN_IMPORT(unsafe,
+  js_activateSemUiDropdown,
+  JSString -> IO (),
+  "$($1).dropdown({fullTextSearch: true});")
 
 data DropdownMulti t a = DropdownMulti
     { _dm_value :: Dynamic t a
@@ -64,7 +54,6 @@ data DropdownMultiConfig a = DropdownMultiConfig
     }
 
 ------------------------------------------------------------------------------
-#ifdef ghcjs_HOST_OS
 activateSemUiDropdownMulti
     :: (MonadWidget t m, Read a)
     => DropdownMultiConfig a
@@ -98,18 +87,10 @@ activateSemUiDropdownMulti dmc = do
     --val <- holdDyn (_dmc_initialValue dmc) e
     --return $! DropdownMulti val
 
-foreign import javascript unsafe
-  "(function(){ $($1).dropdown({onChange: $2, fullTextSearch: $3}); })()"
-  js_activateSemUiDropdownMulti
-    :: JSString
-    -> Callback (JSVal -> JSVal -> JSVal -> IO ())
-    -> JSVal
-    -> IO ()
-#else
-activateSemUiDropdownMulti =
-  error "activateSemUiDropdownMulti: can only be used with GHCJS"
-#endif
-
+FOREIGN_IMPORT(unsafe,
+  js_activateSemUiDropdownMulti,
+  JSString -> Callback (JSVal -> JSVal -> JSVal -> IO ()) -> JSVal -> IO (),
+  "(function(){ $($1).dropdown({onChange: $2, fullTextSearch: $3}); })()")
 
 -- Multi-select sem-ui dropdown is not working properly yet.  Not sure how
 -- to get the current value.
