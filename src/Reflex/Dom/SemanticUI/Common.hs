@@ -20,23 +20,13 @@ import qualified Data.Text as T
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
+-- | Temporary...will be moved out of here eventually.
 tshow :: Show a => a -> Text
 tshow = T.pack . show
 
 ------------------------------------------------------------------------------
-data UiTableCompactness
-  = UiTableCompactnessDefault
-  | UiTableCompactnessCompact
-  | UiTableCompactnessVeryCompact
-  deriving (Eq,Ord,Read,Show,Enum,Bounded)
-
-class UiTableSize a where
-  uiSizeKeyword :: a -> Text
-
-data UiTableSize size => UiTableConfig size = UiTableConfig
-    { _uiTableConfig_size :: size
-    } deriving (Eq,Ord)
-
+-- | A type class for converting data types into appropriate  Semantic UI
+-- class text.
 class UiClassText a where
   uiText :: a -> Text
 
