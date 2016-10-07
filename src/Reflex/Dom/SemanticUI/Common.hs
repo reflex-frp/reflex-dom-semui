@@ -33,9 +33,9 @@ data UiTableCompactness
 class UiTableSize a where
   uiSizeKeyword :: a -> Text
 
-data UiTableSize size => UiTableConfig size = UiTableConfig
-    { _uiTableConfig_size :: size
-    } deriving (Eq,Ord)
+data UiTableConfig size = UiTableConfig
+  { _uiTableConfig_size :: size
+  } deriving (Eq,Ord)
 
 class UiClassText a where
   uiText :: a -> Text
