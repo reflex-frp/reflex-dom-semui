@@ -89,9 +89,10 @@ uiButtonAttrs UiButton{..} = T.unwords $ catMaybes
     , uiText <$> _uiButton_circular
     ]
 
-uiButton :: MonadWidget t m => Dynamic t UiButton -> m a -> m a
+uiButton :: MonadWidget t m => Dynamic t UiButton -> m () -> m (Event t ())
 uiButton bDyn children = do
-    elDynAttr "button" (mkAttrs <$> bDyn) children
+    (e,_) <- elDynAttr' "button" (mkAttrs <$> bDyn) children
+    return $ domEvent Click e
   where
     mkAttrs b = "class" =: T.unwords ["ui", uiButtonAttrs b, "button"]
 
@@ -106,11 +107,12 @@ instance UiClassText UiButtonAnimationType where
    uiText VerticalAnimation = "vertical animated"
    uiText FadeAnimation = "animated fade"
 
-uiButtonAnimated :: MonadWidget t m => UiButtonAnimationType -> Dynamic t UiButton -> m a -> m a -> m a
+uiButtonAnimated :: MonadWidget t m => UiButtonAnimationType -> Dynamic t UiButton -> m () -> m () -> m (Event t ())
 uiButtonAnimated anim bDyn visible hidden = do
-    elDynAttr "button" (mkAttrs <$> bDyn) $ do
+    (e,_) <- elDynAttr' "button" (mkAttrs <$> bDyn) $ do
       divClass "visible content" visible
       divClass "hidden content" hidden
+    return $ domEvent Click e
   where
     mkAttrs b = "class" =: T.unwords ["ui", uiButtonAttrs b, uiText anim, "button"]
 
