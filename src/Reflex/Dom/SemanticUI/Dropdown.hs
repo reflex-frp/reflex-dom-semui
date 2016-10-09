@@ -38,11 +38,7 @@ import           Reflex.Dom.SemanticUI.Common (tshow)
 activateSemUiDropdown :: Text -> IO ()
 activateSemUiDropdown = js_activateSemUiDropdown . toJSString
 
-js_activateSemUiDropdown = undefined
---FOREIGN_IMPORT(unsafe,
---  js_activateSemUiDropdown,
---  JSString -> IO (),
---  "$($1).dropdown({fullTextSearch: true});")
+FOREIGN_IMPORT(unsafe, js_activateSemUiDropdown, JSString -> IO (), "$($1).dropdown({fullTextSearch: true});")
 
 data DropdownMulti t a = DropdownMulti
     { _dm_value :: Dynamic t a
@@ -88,11 +84,7 @@ activateSemUiDropdownMulti dmc = do
     --val <- holdDyn (_dmc_initialValue dmc) e
     --return $! DropdownMulti val
 
-js_activateSemUiDropdownMulti = undefined
---FOREIGN_IMPORT(unsafe,
---  js_activateSemUiDropdownMulti,
---  JSString -> Callback (JSVal -> JSVal -> JSVal -> IO ()) -> JSVal -> IO (),
---  "(function(){ $($1).dropdown({onChange: $2, fullTextSearch: $3}); })()")
+FOREIGN_IMPORT(unsafe, js_activateSemUiDropdownMulti, JSString -> Callback (JSVal -> JSVal -> JSVal -> IO ()) -> JSVal -> IO (), "(function(){ $($1).dropdown({onChange: $2, fullTextSearch: $3}); })()")
 
 -- Multi-select sem-ui dropdown is not working properly yet.  Not sure how
 -- to get the current value.
