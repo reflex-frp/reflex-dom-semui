@@ -11,3 +11,4 @@ main :: IO ()
 main = mainWidget $ do
   el "p" $ text "These are examples of semantic-ui widgets."
   el "p" $ uiButton (huge $ inverted $ blue def) (text "I'm a huge, inverted, blue button!")
+  blank

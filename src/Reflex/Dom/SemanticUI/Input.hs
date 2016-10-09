@@ -34,10 +34,10 @@ instance Default UiInput where
   def = UiInput def def def
 
 instance UiHasSize UiInput where
-  uiSetSize s b = b { _uiInput_color = Just s }
+  uiSetSize s b = b { _uiInput_size = Just s }
 
-instance UiHasLoading UiButton where
-  loading b = b { _uiButton_loading = Just UiLoading }
+instance UiHasLoading UiInput where
+  loading b = b { _uiInput_loading = Just UiLoading }
 
 instance UiHasError UiInput where
   hasError b = b { _uiInput_error = Just UiError }
@@ -55,7 +55,7 @@ uiInput
     -> TextInputConfig t
     -> m (TextInput t)
 uiInput iDyn c =
-    elDynAttr' "div" (mkAttrs <$> iDyn) $ textInput c
+    elDynAttr "div" (mkAttrs <$> iDyn) $ textInput c
   where
     mkAttrs b = "class" =: T.unwords ["ui", uiInputAttrs b, "button"]
 
