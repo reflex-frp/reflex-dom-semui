@@ -16,10 +16,12 @@ module Reflex.Dom.SemanticUI
   ( module Reflex.Dom.SemanticUI.Button
   , module Reflex.Dom.SemanticUI.Common
   , module Reflex.Dom.SemanticUI.Dropdown
+  , module Reflex.Dom.SemanticUI.Input
   ) where
 
 ------------------------------------------------------------------------------
 import           Reflex.Dom.SemanticUI.Common
 import           Reflex.Dom.SemanticUI.Button
 import           Reflex.Dom.SemanticUI.Dropdown
+import           Reflex.Dom.SemanticUI.Input
 ------------------------------------------------------------------------------

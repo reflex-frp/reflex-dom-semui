@@ -24,6 +24,7 @@ library
     Reflex.Dom.SemanticUI.Button
     Reflex.Dom.SemanticUI.Common
     Reflex.Dom.SemanticUI.Dropdown
+    Reflex.Dom.SemanticUI.Input
 
   build-depends:
       base

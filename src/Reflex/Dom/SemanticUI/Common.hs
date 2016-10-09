@@ -190,6 +190,7 @@ big = uiSetSize UiBig
 huge = uiSetSize UiHuge
 massive = uiSetSize UiMassive
 
+
 ------------------------------------------------------------------------------
 data UiLoading = UiLoading
   deriving (Eq,Ord,Read,Show,Enum,Bounded)
@@ -199,6 +200,7 @@ instance UiClassText UiLoading where
 
 class UiHasLoading a where
   loading :: a -> a
+
 
 ------------------------------------------------------------------------------
 data UiCompact = UiCompact
@@ -210,6 +212,7 @@ instance UiClassText UiCompact where
 class UiHasCompact a where
   compact :: a -> a
 
+
 ------------------------------------------------------------------------------
 data UiToggle = UiToggle
   deriving (Eq,Ord,Read,Show,Enum,Bounded)
@@ -219,6 +222,7 @@ instance UiClassText UiToggle where
 
 class UiHasToggle a where
   toggle :: a -> a
+
 
 ------------------------------------------------------------------------------
 data UiFluid = UiFluid
@@ -240,3 +244,14 @@ instance UiClassText UiCircular where
 
 class UiHasCircular a where
   circular :: a -> a
+
+
+------------------------------------------------------------------------------
+data UiError = UiError
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiError where
+  uiText UiError = "error"
+
+class UiHasError a where
+  hasError :: a -> a
