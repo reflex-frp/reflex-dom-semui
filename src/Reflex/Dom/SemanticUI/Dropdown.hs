@@ -12,9 +12,9 @@
 {-# LANGUAGE TypeFamilies             #-}
 {-# LANGUAGE UndecidableInstances     #-}
 
-module Reflex.Dom.SemanticUI.Dropdown where
-
 #include "foreign-compat.h"
+
+module Reflex.Dom.SemanticUI.Dropdown where
 
 ------------------------------------------------------------------------------
 --import           Control.Lens
@@ -40,8 +40,6 @@ import           Reflex.Dom.SemanticUI.Common (tshow)
 activateSemUiDropdown :: Text -> IO ()
 activateSemUiDropdown = js_activateSemUiDropdown . toJSString
 
--- NOTE: For some reason on Mac you can't split the foreign import macro
--- across multiple lines.
 FOREIGN_IMPORT(unsafe, js_activateSemUiDropdown, JSString -> IO (), "$($1).dropdown({fullTextSearch: true});")
 
 data DropdownMulti t a = DropdownMulti
