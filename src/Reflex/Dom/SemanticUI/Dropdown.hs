@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds          #-}
+{-# LANGUAGE CPP                      #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -20,6 +21,7 @@ module Reflex.Dom.SemanticUI.Dropdown where
 import           Control.Monad
 import           Control.Monad.Trans
 --import           Data.Dependent.Sum (DSum (..))
+import qualified Data.List as L
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Data.Monoid
@@ -166,3 +168,67 @@ semUiDropdown' elId iv vals attrs = do
     pb <- getPostBuild
     performEvent_ (liftIO (activateSemUiDropdown (T.cons '#' elId)) <$ pb)
     return $ value d
+
+
+-- | Custom Dropdown item configuration
+data DropdownItemConfig m = DropdownItemConfig
+  { dropdownItemConfig_dataText :: T.Text
+    -- ^ dataText (shown for the selected item)
+  , dropdownItemConfig_internal :: m ()
+    -- ^ Procedure for drawing the DOM contents of the menu item
+    --   (we produce the menu item div for you, so it' enough to
+    --    use something simple here, e.g. `text "Friends"`
+  }
+
+-- | Dropdowns make have these additional properties
+data DropdownOptFlag =
+    DOFFluid
+     -- ^ More flexible dropdown width, won't line break items
+  | DOFSearch
+    -- ^ Make menu items are searchable
+  | DOFSelection
+    -- ^ Dropdown is a selection among alternatives
+  deriving (Eq, Enum, Show)
+
+-- Helper function to build class attribute for dropdown
+dropdownClass :: [DropdownOptFlag] -> T.Text
+dropdownClass opts = T.unwords $ "ui" : (flags ++ ["dropdown"])
+  where flags = map (T.toLower . T.drop 3 . tshow) $ L.sortOn fromEnum opts
+
+
+
+-- | Dropdown with customizable menu items
+semUiDropdownWithItems
+  :: forall t m a.(MonadWidget t m, Ord a)
+  => Text
+     -- ^ Element id.  Ideally this should be randomly generated instead
+     -- of passed in as an argument, but for now this approach is easier.
+  -> [DropdownOptFlag]  -- TODO: DOFSearch eems broken
+  -> a -- ^ Initial value
+  -> Dynamic t (Map a (DropdownItemConfig m))
+     -- ^ Map of items' values and renderings
+  -> Map Text Text
+     -- ^ Dropown attributes
+  -> m (Dynamic t a)
+semUiDropdownWithItems elId opts iv vals attrs = do
+  elChoice <- elAttr "div" ("id" =: elId <>
+                            "class" =: dropdownClass opts <> attrs) $ do
+    divClass "text" $ dynText (maybe "Menu" dropdownItemConfig_dataText .
+                               M.lookup iv <$> vals)
+    elAttr "i" ("class" =: "dropdown icon") blank
+
+    divClass "menu" $ do
+      sel <- listWithKey vals $ \k ddi -> do
+        let (eAttrs :: Dynamic t (Map T.Text T.Text)) =
+              ffor ddi $ \(DropdownItemConfig t _) ->
+                           ("class" =: "item" <> "data-text" =: t)
+            internal = dropdownItemConfig_internal <$> ddi :: Dynamic t (m ())
+        e <- elDynAttr' "div" eAttrs $ dyn internal
+        return (k <$ domEvent Click (fst e))
+      -- return $ (join . fmap fst . M.minView) <$> joinDynThroughMap sel
+      return $ switchPromptlyDyn $ leftmost . M.elems <$> sel
+
+  pb <- getPostBuild
+  pb' <- delay 0.5 pb -- TODO: Item doesn't activate without delay
+  performEvent_ (liftIO (activateSemUiDropdown (T.cons '#' elId)) <$ pb')
+  holdDyn iv (elChoice)
