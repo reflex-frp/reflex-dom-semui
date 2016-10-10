@@ -234,6 +234,5 @@ semUiDropdownWithItems elId opts iv vals attrs = do
       return $ switchPromptlyDyn $ leftmost . M.elems <$> sel
 
   pb <- getPostBuild
-  pb' <- delay 0.5 pb -- TODO: Item doesn't activate without delay
   performEvent_ (liftIO (activateSemUiDropdownEl $ _element_raw elDD) <$ pb)
   holdDyn iv (elChoice)
