@@ -7,8 +7,12 @@ module GHCJS.Compat where
 
 import Data.String (IsString)
 import Data.Text (Text)
+import GHCJS.DOM.HTMLElement (HTMLElement)
 
 data JSVal
+
+unHTMLElement :: HTMLElement -> JSVal
+unHTMLElement = undefined
 
 pFromJSVal :: JSVal -> JSString
 pFromJSVal = undefined

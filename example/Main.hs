@@ -1,4 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GADTs             #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE RankNTypes        #-}
 
 module Main (main) where

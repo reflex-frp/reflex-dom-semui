@@ -27,6 +27,7 @@ import qualified Data.Map as M
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
+import           GHCJS.DOM.HTMLElement (HTMLElement)
 import           Reflex
 --import           Reflex.Host.Class
 import           Reflex.Dom hiding (fromJSString)
@@ -41,6 +42,12 @@ activateSemUiDropdown :: Text -> IO ()
 activateSemUiDropdown = js_activateSemUiDropdown . toJSString
 
 FOREIGN_IMPORT(unsafe, js_activateSemUiDropdown, JSString -> IO (), "$($1).dropdown({fullTextSearch: true});")
+
+activateSemUiDropdownEl :: HTMLElement -> IO ()
+activateSemUiDropdownEl = js_activateSemUiDropdownEl . unHTMLElement
+
+FOREIGN_IMPORT(unsafe, js_activateSemUiDropdownEl, JSVal -> IO (), "$($1).dropdown({fullTextSearch: true});")
+
 
 data DropdownMulti t a = DropdownMulti
     { _dm_value :: Dynamic t a
@@ -209,7 +216,7 @@ semUiDropdownWithItems
      -- ^ Dropown attributes
   -> m (Dynamic t a)
 semUiDropdownWithItems elId opts iv vals attrs = do
-  elChoice <- elAttr "div" ("id" =: elId <>
+  (elDD, elChoice) <- elAttr' "div" ("id" =: elId <>
                             "class" =: dropdownClass opts <> attrs) $ do
     divClass "text" $ dynText (maybe "Menu" dropdownItemConfig_dataText .
                                M.lookup iv <$> vals)
@@ -228,5 +235,5 @@ semUiDropdownWithItems elId opts iv vals attrs = do
 
   pb <- getPostBuild
   pb' <- delay 0.5 pb -- TODO: Item doesn't activate without delay
-  performEvent_ (liftIO (activateSemUiDropdown (T.cons '#' elId)) <$ pb')
+  performEvent_ (liftIO (activateSemUiDropdownEl $ _element_raw elDD) <$ pb)
   holdDyn iv (elChoice)
