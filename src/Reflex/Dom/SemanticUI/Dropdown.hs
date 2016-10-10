@@ -27,7 +27,7 @@ import qualified Data.Map as M
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           GHCJS.DOM.HTMLElement (HTMLElement)
+import qualified GHCJS.DOM.Element as DOM
 import           Reflex
 --import           Reflex.Host.Class
 import           Reflex.Dom hiding (fromJSString)
@@ -43,8 +43,8 @@ activateSemUiDropdown = js_activateSemUiDropdown . toJSString
 
 FOREIGN_IMPORT(unsafe, js_activateSemUiDropdown, JSString -> IO (), "$($1).dropdown({fullTextSearch: true});")
 
-activateSemUiDropdownEl :: HTMLElement -> IO ()
-activateSemUiDropdownEl = js_activateSemUiDropdownEl . unHTMLElement
+activateSemUiDropdownEl :: DOM.Element -> IO ()
+activateSemUiDropdownEl = js_activateSemUiDropdownEl . pToJSVal
 
 FOREIGN_IMPORT(unsafe, js_activateSemUiDropdownEl, JSVal -> IO (), "$($1).dropdown({fullTextSearch: true});")
 

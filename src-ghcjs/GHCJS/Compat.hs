@@ -5,4 +5,4 @@ import GHCJS.Foreign          as X
 import GHCJS.Marshal.Internal as X
 import GHCJS.Types            as X
 import GHCJS.DOM.HTMLElement  as X
-import GHCJS.DOM.Types        as X (ToJSString, FromJSString, toJSString, fromJSString, unHTMLElement)
+import GHCJS.DOM.Types        as X (ToJSString, FromJSString, toJSString, fromJSString)
