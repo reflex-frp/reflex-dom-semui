@@ -24,6 +24,12 @@ import           Reflex.Dom hiding (fromJSString)
 import           Reflex.Dom.SemanticUI.Common
 ------------------------------------------------------------------------------
 
+------------------------------------------------------------------------------
+-- | Data structure describing options available for buttons.  The typical way
+-- of using this data structure is to use the default instance and modify it
+-- using the various UiHasXYZ type classes.  For instance:
+--
+-- @huge $ inverted $ blue def@
 data UiButton = UiButton
     { _uiButton_emphasis   :: Maybe UiEmphasis
     , _uiButton_color      :: Maybe UiColor
@@ -74,6 +80,9 @@ instance UiHasFluid UiButton where
 instance UiHasCircular UiButton where
   circular b = b { _uiButton_circular = Just UiCircular }
 
+------------------------------------------------------------------------------
+-- | Helper function mostly intended for internal use.  Exported for
+-- completeness.
 uiButtonAttrs :: UiButton -> Text
 uiButtonAttrs UiButton{..} = T.unwords $ catMaybes
     [ uiText <$> _uiButton_emphasis
@@ -89,7 +98,20 @@ uiButtonAttrs UiButton{..} = T.unwords $ catMaybes
     , uiText <$> _uiButton_circular
     ]
 
-uiButton :: MonadWidget t m => Dynamic t UiButton -> m () -> m (Event t ())
+------------------------------------------------------------------------------
+-- | The primary function for creating Semantic UI buttons.  Much of Semantic
+-- UI's button functionality is available from this function:
+--
+-- @uiButton (huge $ inverted $ blue def) (text "Click Me")@
+--
+-- Some of the Semantic UI button functionality requires a certain class and
+-- additional structure from the child nodes.  This kind of functionality is
+-- provided by other functions such as 'uiButtonAnimated'.
+uiButton
+    :: MonadWidget t m
+    => Dynamic t UiButton
+    -> m ()
+    -> m (Event t ())
 uiButton bDyn children = do
     (e,_) <- elDynAttr' "button" (mkAttrs <$> bDyn) children
     return $ domEvent Click e
@@ -107,7 +129,18 @@ instance UiClassText UiButtonAnimationType where
    uiText VerticalAnimation = "vertical animated"
    uiText FadeAnimation = "animated fade"
 
-uiButtonAnimated :: MonadWidget t m => UiButtonAnimationType -> Dynamic t UiButton -> m () -> m () -> m (Event t ())
+------------------------------------------------------------------------------
+-- | Implements animated buttons that change when you hover over them.
+uiButtonAnimated
+    :: MonadWidget t m
+    => UiButtonAnimationType
+    -- ^ Controls the type of the animation
+    -> Dynamic t UiButton
+    -> m ()
+    -- ^ The visible section
+    -> m ()
+    -- ^ The hidden section
+    -> m (Event t ())
 uiButtonAnimated anim bDyn visible hidden = do
     (e,_) <- elDynAttr' "button" (mkAttrs <$> bDyn) $ do
       divClass "visible content" visible

@@ -192,6 +192,65 @@ massive = uiSetSize UiMassive
 
 
 ------------------------------------------------------------------------------
+data UiFlipped
+  = UiFlipHoriz
+  | UiFlipVert
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiFlipped where
+  uiText UiFlipHoriz = "horizontally flipped"
+  uiText UiFlipVert = "vertically flipped"
+
+class UiHasFlipped a where
+  uiSetFlipped :: UiFlipped -> a -> a
+
+flipHoriz, flipVert :: UiHasFlipped a => a -> a
+flipHoriz = uiSetFlipped UiFlipHoriz
+flipVert = uiSetFlipped UiFlipVert
+
+
+------------------------------------------------------------------------------
+data UiRotated
+  = UiRotateCounterclockwise
+  | UiRotateClockwise
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiRotated where
+  uiText UiRotateCounterclockwise = "counterclockwise rotated"
+  uiText UiRotateClockwise = "clockwise rotated"
+
+class UiHasRotated a where
+  uiSetRotated :: UiRotated -> a -> a
+
+counterclockwise, clockwise :: UiHasRotated a => a -> a
+counterclockwise = uiSetRotated UiRotateCounterclockwise
+clockwise = uiSetRotated UiRotateClockwise
+
+
+------------------------------------------------------------------------------
+data UiFitted = UiFitted
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiFitted where
+  uiText UiFitted = "fitted"
+
+class UiHasFitted a where
+  fitted :: a -> a
+
+
+------------------------------------------------------------------------------
+data UiLeft = UiLeft
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiLeft where
+  uiText UiLeft = "left"
+
+class UiHasLeft a where
+  uiLeft :: a -> a
+  -- Use the ui prefix to not clash with the left function from errors
+
+
+------------------------------------------------------------------------------
 data UiLoading = UiLoading
   deriving (Eq,Ord,Read,Show,Enum,Bounded)
 
@@ -255,3 +314,14 @@ instance UiClassText UiError where
 
 class UiHasError a where
   hasError :: a -> a
+
+
+------------------------------------------------------------------------------
+data UiBordered = UiBordered
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiBordered where
+  uiText UiBordered = "bordered"
+
+class UiHasBordered a where
+  bordered :: a -> a
