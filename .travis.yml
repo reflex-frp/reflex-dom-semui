@@ -36,7 +36,6 @@ install:
    fi
  - travis_retry cabal update -v
  - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
- - reflex-platform/work-on ghcjs ./. --command "cabal configure && cabal build"
 
 script:
  - git config --global user.email "travis-ci@example.com"
