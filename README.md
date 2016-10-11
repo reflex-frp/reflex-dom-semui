@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/reflex-frp/reflex-dom-semui.svg?branch=master)](https://travis-ci.org/reflex-frp/reflex-dom-semui)
+
 This package provides a Reflex wrapper around the Semantic UI components.  It is very
 incomplete and was derived from [code written for
 hsnippet](https://github.com/mightybyte/hsnippet/blob/64cc17d2bf2bcce219f3ab8e96b7fd6071d5b56b/frontend/src/SemanticUI.hs).

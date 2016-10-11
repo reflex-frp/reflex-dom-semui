@@ -2,7 +2,12 @@ name:                reflex-dom-semui
 version:             0.1
 license:             BSD3
 synopsis:            A reflex-dom API for semantic-ui components
+description:         This package provides a Reflex wrapper around the
+                     Semantit UI components. The goal is to make it fast
+                     and easy to build nice looking applications and make
+                     Semantic UI functionality a lot more discoverable.
 author:              Doug Beardsley
+maintainer:          mightybyte@gmail.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
@@ -67,3 +72,7 @@ test-suite example
     , reflex-dom        >= 0.4 && < 0.5
     , reflex-dom-semui
     , text
+
+source-repository head
+  type: git
+  location: https://github.com/reflex-frp/reflex-dom-semui
