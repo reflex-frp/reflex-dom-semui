@@ -1,6 +1,7 @@
 name:                reflex-dom-semui
 version:             0.1
 license:             BSD3
+license-file:        LICENSE
 synopsis:            A reflex-dom API for semantic-ui components
 description:         This package provides a Reflex wrapper around the
                      Semantit UI components. The goal is to make it fast
@@ -33,7 +34,7 @@ library
     GHCJS.Compat
 
   build-depends:
-      base
+      base       >= 4.8 && < 4.10
     , containers
     , data-default
     , ghcjs-dom
