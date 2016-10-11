@@ -26,8 +26,6 @@ before_install:
 
 install:
  - cabal --version
- - BENCH=${BENCH---enable-benchmarks}
- - TEST=${TEST---enable-tests}
  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
  - if [ -f $HOME/.cabal/packages/hackage.haskell.org/00-index.tar.gz ];
    then
@@ -40,16 +38,16 @@ install:
 script:
  - git config --global user.email "travis-ci@example.com"
  - git config --global user.name "Travis-CI"
- - reflex-platform/work-on ghcjs ./. --command "cabal configure --enable-tests --ghcjs && cabal build"
- - reflex-platform/work-on ghc   ./. --command "cabal configure --enable-tests && cabal build"
+ - export PACKAGE=$(cabal info . | awk '{print $2;exit}')
+ - cabal check
+ - cabal sdist
+ - cabal unpack dist/$PACKAGE.tar.gz
+ - cd $PACKAGE
+ - ../reflex-platform/work-on ghcjs ./. --command "cabal configure --enable-tests --ghcjs && cabal build"
+ - ../reflex-platform/work-on ghc   ./. --command "cabal configure --enable-tests && cabal build"
 
 cache:
   directories:
   - /nix
-  - $HOME/.cabal/packages
-  - $HOME/.cabal/store
-
-env:
-  global:
-    - ENCRYPTION_LABEL: "3c89d919c82e"
-    - COMMIT_AUTHOR_EMAIL: "imalsogreg@gmail.com"
+  # - $HOME/.cabal/packages # These will be empty
+  # - $HOME/.cabal/store    # when building under nix?
