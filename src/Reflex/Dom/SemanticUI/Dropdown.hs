@@ -19,6 +19,7 @@ module Reflex.Dom.SemanticUI.Dropdown where
 ------------------------------------------------------------------------------
 --import           Control.Lens
 import           Control.Monad
+import           Control.Monad.Fix
 import           Control.Monad.Trans
 --import           Data.Dependent.Sum (DSum (..))
 import qualified Data.List as L
@@ -204,7 +205,16 @@ dropdownClass opts = T.unwords $ "ui" : (flags ++ ["dropdown"])
 
 -- | Dropdown with customizable menu items
 semUiDropdownWithItems
-  :: forall t m a.(MonadWidget t m, Ord a)
+  :: forall t m a.(DomBuilder t m,
+#if ghcjs_HOST_OS
+                   DomBuilderSpace m ~ GhcjsDomSpace,
+                   MonadIO (Performable m),
+                   PerformEvent t m,
+#endif
+                   MonadFix m,
+                   MonadHold t m,
+                   PostBuild t m,
+                   Ord a)
   => Text
      -- ^ Element id.  Ideally this should be randomly generated instead
      -- of passed in as an argument, but for now this approach is easier.
@@ -216,7 +226,7 @@ semUiDropdownWithItems
      -- ^ Dropown attributes
   -> m (Dynamic t a)
 semUiDropdownWithItems elId opts iv vals attrs = do
-  (elDD, elChoice) <- elAttr' "div" ("id" =: elId <>
+  dropdownElement <- elAttr' "div" ("id" =: elId <>
                             "class" =: dropdownClass opts <> attrs) $ do
     divClass "text" $ dynText (maybe "Menu" dropdownItemConfig_dataText .
                                M.lookup iv <$> vals)
@@ -230,9 +240,10 @@ semUiDropdownWithItems elId opts iv vals attrs = do
             internal = dropdownItemConfig_internal <$> ddi :: Dynamic t (m ())
         e <- elDynAttr' "div" eAttrs $ dyn internal
         return (k <$ domEvent Click (fst e))
-      -- return $ (join . fmap fst . M.minView) <$> joinDynThroughMap sel
       return $ switchPromptlyDyn $ leftmost . M.elems <$> sel
-
+#if ghcjs_HOST_OS
   pb <- getPostBuild
-  performEvent_ (liftIO (activateSemUiDropdownEl $ _element_raw elDD) <$ pb)
-  holdDyn iv (elChoice)
+  performEvent_ (liftIO (activateSemUiDropdownEl $
+                         _element_raw (fst dropdownElement)) <$ pb)
+#endif
+  holdDyn iv (snd dropdownElement)
