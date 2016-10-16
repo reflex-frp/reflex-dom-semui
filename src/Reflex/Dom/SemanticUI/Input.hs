@@ -30,11 +30,12 @@ data UiInput = UiInput
     { _uiInput_size       :: Maybe UiSize
     , _uiInput_left       :: Maybe UiLeft
     , _uiInput_loading    :: Maybe UiLoading
+    , _uiInput_disabled   :: Maybe UiDisabled
     , _uiInput_error      :: Maybe UiError
     } deriving (Eq,Show)
 
 instance Default UiInput where
-  def = UiInput def def def def
+  def = UiInput def def def def def
 
 instance UiHasSize UiInput where
   uiSetSize s b = b { _uiInput_size = Just s }
@@ -53,15 +54,16 @@ uiInputAttrs UiInput{..} = T.unwords $ catMaybes
     [ uiText <$> _uiInput_size
     , uiText <$> _uiInput_left
     , (<> " icon") . uiText <$> _uiInput_loading
+    , uiText <$> _uiInput_disabled
     , uiText <$> _uiInput_error
     ]
 
-uiInput
+uiTextInput
     :: MonadWidget t m
     => Dynamic t UiInput
     -> TextInputConfig t
     -> m (TextInput t)
-uiInput iDyn c =
+uiTextInput iDyn c =
     elDynAttr "div" (mkAttrs <$> iDyn) $ do
       res <- textInput c
       _ <- dyn (loadingPart <$> iDyn)

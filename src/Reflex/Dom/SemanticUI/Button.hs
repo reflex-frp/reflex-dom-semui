@@ -35,7 +35,8 @@ data UiButton = UiButton
     , _uiButton_color      :: Maybe UiColor
     , _uiButton_basic      :: Maybe UiBasic
     , _uiButton_inverted   :: Maybe UiInverted
-    , _uiButton_activation :: Maybe UiActivation
+    , _uiButton_activation :: Maybe (Either UiActive UiDisabled)
+    -- ^ active and disabled should be mutually exclusive so we use an Either
     , _uiButton_size       :: Maybe UiSize
     , _uiButton_loading    :: Maybe UiLoading
     , _uiButton_compact    :: Maybe UiCompact
@@ -59,8 +60,11 @@ instance UiHasBasic UiButton where
 instance UiHasInverted UiButton where
   inverted b = b { _uiButton_inverted = Just UiInverted }
 
-instance UiHasActivation UiButton where
-  uiSetActivation a b = b { _uiButton_activation = Just a }
+instance UiHasActive UiButton where
+  active b = b { _uiButton_activation = Just $ Left UiActive }
+
+instance UiHasDisabled UiButton where
+  disabled b = b { _uiButton_activation = Just $ Right UiDisabled }
 
 instance UiHasSize UiButton where
   uiSetSize c b = b { _uiButton_size = Just c }

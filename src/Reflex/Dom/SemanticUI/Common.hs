@@ -35,6 +35,10 @@ instance (Default a, Reflex t) => Default (Dynamic t a) where
 class UiClassText a where
   uiText :: a -> Text
 
+instance (UiClassText a, UiClassText b) => UiClassText (Either a b) where
+    uiText (Left a) = uiText a
+    uiText (Right b) = uiText b
+
 ------------------------------------------------------------------------------
 data UiColor
   = UiRed
@@ -136,21 +140,24 @@ instance (Reflex t, UiHasInverted a) => UiHasInverted (Dynamic t a) where
   inverted = fmap inverted
 
 ------------------------------------------------------------------------------
-data UiActivation
-  = UiActive
-  | UiDisabled
+data UiActive = UiActive
   deriving (Eq,Ord,Read,Show,Enum,Bounded)
 
-instance UiClassText UiActivation where
+instance UiClassText UiActive where
   uiText UiActive = "active"
+
+class UiHasActive a where
+  active :: a -> a
+
+------------------------------------------------------------------------------
+data UiDisabled = UiDisabled
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiDisabled where
   uiText UiDisabled = "disabled"
 
-class UiHasActivation a where
-  uiSetActivation :: UiActivation -> a -> a
-
-active, disabled :: UiHasActivation a => a -> a
-active = uiSetActivation UiActive
-disabled = uiSetActivation UiDisabled
+class UiHasDisabled a where
+  disabled :: a -> a
 
 ------------------------------------------------------------------------------
 data UiSize
