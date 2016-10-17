@@ -27,7 +27,7 @@ import           Reflex.Dom.SemanticUI.Common
 data UiIcon = UiIcon
     { _uiIcon_size       :: Maybe UiSize
     , _uiIcon_color      :: Maybe UiColor
-    -- Need to add disabled, but icons don't have active and disabled
+    , _uiIcon_disabled   :: Maybe UiDisabled
     , _uiIcon_left       :: Maybe UiLeft
     , _uiIcon_loading    :: Maybe UiLoading
     , _uiIcon_fitted     :: Maybe UiFitted
@@ -39,13 +39,16 @@ data UiIcon = UiIcon
     } deriving (Eq,Show)
 
 instance Default UiIcon where
-  def = UiIcon def def def def def def def def def def
+  def = UiIcon def def def def def def def def def def def
 
 instance UiHasSize UiIcon where
   uiSetSize s b = b { _uiIcon_size = Just s }
 
 instance UiHasColor UiIcon where
   uiSetColor c b = b { _uiIcon_color = Just c }
+
+instance UiHasDisabled UiIcon where
+  disabled b = b { _uiIcon_disabled = Just UiDisabled }
 
 instance UiHasLeft UiIcon where
   uiLeft b = b { _uiIcon_left = Just UiLeft }
@@ -75,6 +78,7 @@ uiIconAttrs :: UiIcon -> Text
 uiIconAttrs UiIcon{..} = T.unwords $ catMaybes
     [ uiText <$> _uiIcon_size
     , uiText <$> _uiIcon_color
+    , uiText <$> _uiIcon_disabled
     , uiText <$> _uiIcon_left
     , uiText <$> _uiIcon_loading
     , uiText <$> _uiIcon_fitted

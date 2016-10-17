@@ -36,8 +36,17 @@ class UiClassText a where
   uiText :: a -> Text
 
 instance (UiClassText a, UiClassText b) => UiClassText (Either a b) where
-    uiText (Left a) = uiText a
-    uiText (Right b) = uiText b
+  uiText (Left a) = uiText a
+  uiText (Right b) = uiText b
+
+class UiHasCustom a where
+  custom :: Text -> a -> a
+
+------------------------------------------------------------------------------
+-- | Helper function for adding a class item to a custom class field.
+addCustom :: Text -> Maybe Text -> Maybe Text
+addCustom cls Nothing = Just cls
+addCustom cls (Just c) = Just (T.unwords [cls, c])
 
 ------------------------------------------------------------------------------
 data UiColor
