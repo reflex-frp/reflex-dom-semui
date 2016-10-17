@@ -27,16 +27,19 @@ import           Reflex.Dom.SemanticUI.Icon
 ------------------------------------------------------------------------------
 
 data UiInput = UiInput
-    { _uiInput_size       :: Maybe UiSize
-    , _uiInput_left       :: Maybe UiLeft
-    , _uiInput_loading    :: Maybe UiLoading
-    , _uiInput_disabled   :: Maybe UiDisabled
-    , _uiInput_error      :: Maybe UiError
-    , _uiInput_custom     :: Maybe Text
+    { _uiInput_size        :: Maybe UiSize
+    , _uiInput_left        :: Maybe UiLeft
+    , _uiInput_loading     :: Maybe UiLoading
+    , _uiInput_disabled    :: Maybe UiDisabled
+    , _uiInput_error       :: Maybe UiError
+    , _uiInput_transparent :: Maybe UiTransparent
+    , _uiInput_inverted    :: Maybe UiInverted
+    , _uiInput_fluid       :: Maybe UiFluid
+    , _uiInput_custom      :: Maybe Text
     } deriving (Eq,Show)
 
 instance Default UiInput where
-  def = UiInput def def def def def def
+  def = UiInput def def def def def def def def def
 
 instance UiHasSize UiInput where
   uiSetSize s i = i { _uiInput_size = Just s }
@@ -50,6 +53,15 @@ instance UiHasLeft UiInput where
 instance UiHasError UiInput where
   hasError i = i { _uiInput_error = Just UiError }
 
+instance UiHasTransparent UiInput where
+  transparent i = i { _uiInput_transparent = Just UiTransparent }
+
+instance UiHasInverted UiInput where
+  inverted i = i { _uiInput_inverted = Just UiInverted }
+
+instance UiHasFluid UiInput where
+  fluid i = i { _uiInput_fluid = Just UiFluid }
+
 instance UiHasCustom UiInput where
   custom s i = i { _uiInput_custom = Just s }
 
@@ -60,6 +72,9 @@ uiInputAttrs UiInput{..} = T.unwords $ catMaybes
     , (<> " icon") . uiText <$> _uiInput_loading
     , uiText <$> _uiInput_disabled
     , uiText <$> _uiInput_error
+    , uiText <$> _uiInput_transparent
+    , uiText <$> _uiInput_inverted
+    , uiText <$> _uiInput_fluid
     , _uiInput_custom
     ]
 
@@ -106,3 +121,5 @@ uiIconTextInput iconType iconDyn inputDyn c =
   where
     modCustom :: (Maybe Text -> Maybe Text) -> UiInput -> UiInput
     modCustom f i = i { _uiInput_custom = f (_uiInput_custom i) }
+
+-- TODO Add functions for labelled buttons and action buttons

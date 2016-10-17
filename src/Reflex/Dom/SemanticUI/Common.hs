@@ -35,6 +35,8 @@ instance (Default a, Reflex t) => Default (Dynamic t a) where
 class UiClassText a where
   uiText :: a -> Text
 
+------------------------------------------------------------------------------
+-- | Passthrough instance for Either
 instance (UiClassText a, UiClassText b) => UiClassText (Either a b) where
   uiText (Left a) = uiText a
   uiText (Right b) = uiText b
@@ -244,6 +246,30 @@ clockwise = uiSetRotated UiRotateClockwise
 
 
 ------------------------------------------------------------------------------
+data UiAlignment
+  = UiLeftAligned
+  | UiCenterAligned
+  | UiRightAligned
+  | UiJustified
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiAlignment where
+  uiText UiLeftAligned = "left aligned"
+  uiText UiCenterAligned = "center aligned"
+  uiText UiRightAligned = "right aligned"
+  uiText UiJustified = "justified"
+
+class UiHasAlignment a where
+  uiSetAlignment :: UiAlignment -> a -> a
+
+leftAligned, centerAligned, rightAligned, justified :: UiHasAlignment a => a -> a
+leftAligned = uiSetAlignment UiLeftAligned
+centerAligned = uiSetAlignment UiCenterAligned
+rightAligned = uiSetAlignment UiRightAligned
+justified = uiSetAlignment UiJustified
+
+
+------------------------------------------------------------------------------
 data UiFitted = UiFitted
   deriving (Eq,Ord,Read,Show,Enum,Bounded)
 
@@ -341,3 +367,29 @@ instance UiClassText UiBordered where
 
 class UiHasBordered a where
   bordered :: a -> a
+
+
+------------------------------------------------------------------------------
+data UiTransparent = UiTransparent
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiTransparent where
+  uiText UiTransparent = "transparent"
+
+class UiHasTransparent a where
+  transparent :: a -> a
+
+
+------------------------------------------------------------------------------
+-- | This is an attribute that can be applied to components.  Right now it is
+-- used by container.
+data UiText = UiText
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiText where
+  uiText UiText = "text"
+
+class UiHasText a where
+  text :: a -> a
+
+
