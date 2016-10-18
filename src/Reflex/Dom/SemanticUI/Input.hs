@@ -44,11 +44,14 @@ instance Default UiInput where
 instance UiHasSize UiInput where
   uiSetSize s i = i { _uiInput_size = Just s }
 
+instance UiHasLeft UiInput where
+  uiLeft i = i { _uiInput_left = Just UiLeft }
+
 instance UiHasLoading UiInput where
   loading i = i { _uiInput_loading = Just UiLoading }
 
-instance UiHasLeft UiInput where
-  uiLeft i = i { _uiInput_left = Just UiLeft }
+instance UiHasDisabled UiInput where
+  disabled i = i { _uiInput_disabled = Just UiDisabled }
 
 instance UiHasError UiInput where
   hasError i = i { _uiInput_error = Just UiError }
