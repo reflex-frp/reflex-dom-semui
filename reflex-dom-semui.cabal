@@ -12,7 +12,10 @@ maintainer:          mightybyte@gmail.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
-extra-source-files:  include/foreign-compat.h
+
+extra-source-files:
+  include/foreign-compat.h
+  lib/semantic.min.css
 
 library
   hs-source-dirs: src
@@ -38,6 +41,7 @@ library
       base       >= 4.8 && < 4.10
     , containers
     , data-default
+    , file-embed >= 0.0.10 && < 0.1
     , ghcjs-dom
     , mtl
     , reflex     >= 0.5 && < 0.6
