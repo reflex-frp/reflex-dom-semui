@@ -17,20 +17,31 @@ module Reflex.Dom.SemanticUI.Container where
 ------------------------------------------------------------------------------
 import           Data.Default
 import           Data.Maybe
-import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Reflex.Dom hiding (fromJSString)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.SemanticUI.Common
-import           Reflex.Dom.SemanticUI.Icon
 ------------------------------------------------------------------------------
 
+
+------------------------------------------------------------------------------
+-- | This is an attribute that can be applied to components.  Right now it is
+-- used by container.
+data UiTextContainer = UiTextContainer
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiTextContainer where
+  uiText UiTextContainer = "text"
+
+class UiHasTextContainer a where
+  textContainer :: a -> a
+
 data UiContainer = UiContainer
-    { _uiContainer_size        :: Maybe UiSize
-    , _uiContainer_left        :: Maybe UiLeft
-    , _uiContainer_fluid       :: Maybe UiFluid
-    , _uiContainer_text        :: Maybe UiText
+    { _uiContainer_size  :: Maybe UiSize
+    , _uiContainer_left  :: Maybe UiLeft
+    , _uiContainer_fluid :: Maybe UiFluid
+    , _uiContainer_text  :: Maybe UiTextContainer
     } deriving (Eq,Show)
 
 instance Default UiContainer where
@@ -45,8 +56,8 @@ instance UiHasLeft UiContainer where
 instance UiHasFluid UiContainer where
   fluid i = i { _uiContainer_fluid = Just UiFluid }
 
-instance UiHasText UiContainer where
-  text i = i { _uiContainer_text = Just UiText }
+instance UiHasTextContainer UiContainer where
+  textContainer i = i { _uiContainer_text = Just UiTextContainer }
 
 uiContainerAttrs :: UiContainer -> Text
 uiContainerAttrs UiContainer{..} = T.unwords $ catMaybes

@@ -26,6 +26,7 @@ library
     Reflex.Dom.SemanticUI
     Reflex.Dom.SemanticUI.Button
     Reflex.Dom.SemanticUI.Common
+    Reflex.Dom.SemanticUI.Container
     Reflex.Dom.SemanticUI.Dropdown
     Reflex.Dom.SemanticUI.Icon
     Reflex.Dom.SemanticUI.Input

@@ -380,16 +380,3 @@ class UiHasTransparent a where
   transparent :: a -> a
 
 
-------------------------------------------------------------------------------
--- | This is an attribute that can be applied to components.  Right now it is
--- used by container.
-data UiText = UiText
-  deriving (Eq,Ord,Read,Show,Enum,Bounded)
-
-instance UiClassText UiText where
-  uiText UiText = "text"
-
-class UiHasText a where
-  text :: a -> a
-
-
