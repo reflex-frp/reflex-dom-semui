@@ -76,7 +76,7 @@ instance UiHasCompact UiButton where
   compact b = b { _uiButton_compact = Just UiCompact }
 
 instance UiHasToggle UiButton where
-  toggle b = b { _uiButton_toggle = Just UiToggle }
+  uiToggle b = b { _uiButton_toggle = Just UiToggle }
 
 instance UiHasFluid UiButton where
   fluid b = b { _uiButton_fluid = Just UiFluid }

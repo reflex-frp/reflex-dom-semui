@@ -322,7 +322,7 @@ instance UiClassText UiToggle where
   uiText UiToggle = "toggle"
 
 class UiHasToggle a where
-  toggle :: a -> a
+  uiToggle :: a -> a
 
 
 ------------------------------------------------------------------------------
