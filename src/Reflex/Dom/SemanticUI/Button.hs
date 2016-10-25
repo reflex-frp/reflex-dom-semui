@@ -22,6 +22,7 @@ import qualified Data.Text as T
 import           Reflex.Dom hiding (fromJSString)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.SemanticUI.Common
+import           Reflex.Dom.SemanticUI.Icon
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
@@ -43,10 +44,11 @@ data UiButton = UiButton
     , _uiButton_toggle     :: Maybe UiToggle
     , _uiButton_fluid      :: Maybe UiFluid
     , _uiButton_circular   :: Maybe UiCircular
+    , _uiButton_custom     :: Maybe Text
     } deriving (Eq,Show)
 
 instance Default UiButton where
-  def = UiButton def def def def def def def def def def def
+  def = UiButton def def def def def def def def def def def def
 
 instance UiHasColor UiButton where
   uiSetColor c b = b { _uiButton_color = Just c }
@@ -84,6 +86,9 @@ instance UiHasFluid UiButton where
 instance UiHasCircular UiButton where
   circular b = b { _uiButton_circular = Just UiCircular }
 
+instance UiHasCustom UiButton where
+  custom s i = i { _uiButton_custom = addCustom s (_uiButton_custom i) }
+
 ------------------------------------------------------------------------------
 -- | Helper function mostly intended for internal use.  Exported for
 -- completeness.
@@ -100,6 +105,7 @@ uiButtonAttrs UiButton{..} = T.unwords $ catMaybes
     , uiText <$> _uiButton_toggle
     , uiText <$> _uiButton_fluid
     , uiText <$> _uiButton_circular
+    , _uiButton_custom
     ]
 
 ------------------------------------------------------------------------------
@@ -153,3 +159,22 @@ uiButtonAnimated anim bDyn visible hidden = do
   where
     mkAttrs b = "class" =: T.unwords ["ui", uiButtonAttrs b, uiText anim, "button"]
 
+------------------------------------------------------------------------------
+-- | Implements a labeled icon button.  The icon can be on the left or the
+-- right and this widget uses the Either type to indicate that.
+uiLabeledIconButton
+    :: MonadWidget t m
+    => Either Text Text
+    -> Dynamic t UiButton
+    -> Dynamic t UiIcon
+    -> m ()
+    -> m (Event t ())
+uiLabeledIconButton iconType bDyn iDyn children = do
+    uiButton (custom (eText $ setE "labeled" iconType) <$> bDyn) $ do
+      uiIcon (eText iconType) iDyn
+      children
+  where
+    eText (Left t) = t
+    eText (Right t) = T.unwords ["right", t]
+    setE a (Left _) = Left a
+    setE a (Right _) = Right a

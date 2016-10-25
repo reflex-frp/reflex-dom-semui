@@ -42,6 +42,9 @@ instance (UiClassText a, UiClassText b) => UiClassText (Either a b) where
   uiText (Right b) = uiText b
 
 class UiHasCustom a where
+  -- | IMPORTANT: Implementations of this function should use the accompanying
+  -- 'addCustom' function to make sure that new values are added on and don't
+  -- overwrite anything that was already there.
   custom :: Text -> a -> a
 
 ------------------------------------------------------------------------------

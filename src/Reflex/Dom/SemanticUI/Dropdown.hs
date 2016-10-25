@@ -37,6 +37,9 @@ import           Reflex.Dom.SemanticUI.Common (tshow)
 ------------------------------------------------------------------------------
 
 
+enumItemMap :: (Show a, Enum a) => a -> a -> [(a, Text)]
+enumItemMap from to = map (\a -> (a, T.pack $ show a)) [from..to]
+
 ------------------------------------------------------------------------------
 activateSemUiDropdown :: Text -> IO ()
 activateSemUiDropdown = js_activateSemUiDropdown . toJSString

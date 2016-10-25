@@ -66,7 +66,7 @@ instance UiHasFluid UiInput where
   fluid i = i { _uiInput_fluid = Just UiFluid }
 
 instance UiHasCustom UiInput where
-  custom s i = i { _uiInput_custom = Just s }
+  custom s i = i { _uiInput_custom = addCustom s (_uiInput_custom i) }
 
 uiInputAttrs :: UiInput -> Text
 uiInputAttrs UiInput{..} = T.unwords $ catMaybes
