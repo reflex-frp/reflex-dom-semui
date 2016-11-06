@@ -6,6 +6,7 @@ module Reflex.Dom.SemanticUI
   , module Reflex.Dom.SemanticUI.Dropdown
   , module Reflex.Dom.SemanticUI.Icon
   , module Reflex.Dom.SemanticUI.Input
+  , module Reflex.Dom.SemanticUI.Modal
   , semanticCSS
   ) where
 
@@ -13,11 +14,12 @@ module Reflex.Dom.SemanticUI
 import           Data.FileEmbed
 import           Data.Text (Text)
 ------------------------------------------------------------------------------
-import           Reflex.Dom.SemanticUI.Common
 import           Reflex.Dom.SemanticUI.Button
+import           Reflex.Dom.SemanticUI.Common
 import           Reflex.Dom.SemanticUI.Dropdown
 import           Reflex.Dom.SemanticUI.Icon
 import           Reflex.Dom.SemanticUI.Input
+import           Reflex.Dom.SemanticUI.Modal
 ------------------------------------------------------------------------------
 
 

@@ -33,6 +33,7 @@ library
     Reflex.Dom.SemanticUI.Dropdown
     Reflex.Dom.SemanticUI.Icon
     Reflex.Dom.SemanticUI.Input
+    Reflex.Dom.SemanticUI.Modal
 
   other-modules:
     GHCJS.Compat
