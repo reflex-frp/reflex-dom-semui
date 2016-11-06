@@ -18,8 +18,8 @@ module Reflex.Dom.SemanticUI.Modal where
 
 ------------------------------------------------------------------------------
 import           Control.Monad.Trans
-import           Data.Monoid
 import           Data.Text (Text)
+import qualified GHCJS.DOM.Types as DOM
 import           Reflex.Dom
 ------------------------------------------------------------------------------
 import           GHCJS.Compat
@@ -44,7 +44,7 @@ import           GHCJS.Compat
 --instance Default UiModal where
 --    def = UiModal True True False False True 0 "body" True "scale" 400 False
 
-data ModalBehaviors
+data ModalBehavior
     = ShowModal
     | HideModal
     | ToggleModal
@@ -57,7 +57,7 @@ data ModalBehaviors
     | SetActive
   deriving (Eq,Ord,Enum)
 
-modalBehaviorString :: ModalBehaviors -> Text
+modalBehaviorString :: ModalBehavior -> Text
 modalBehaviorString beh =
     case beh of
       ShowModal -> "show"
@@ -72,19 +72,16 @@ modalBehaviorString beh =
       SetActive -> "set active"
 
 ------------------------------------------------------------------------------
-uiModal :: MonadWidget t m => Text -> Event t ModalBehaviors -> m a -> m a
-uiModal elId beh children = do
-    res <- elAttr "div" ("id" =: elId <> "class" =: "ui modal") children
-    let doBehavior b = liftIO $ js_activateSemUiModal
-                         (toJSString ("#"<>elId))
-                         (toJSString $ modalBehaviorString b)
-    performEvent (doBehavior <$> beh)
+uiModal :: MonadWidget t m => Event t ModalBehavior -> m a -> m a
+uiModal beh children = do
+    (e,res) <- elAttr' "div" ("class" =: "ui modal") children
+    performEvent (liftIO . uiTriggerModalAction (_element_raw e) <$> beh)
     return res
 
 ------------------------------------------------------------------------------
-uiShowModal :: Text -> ModalBehaviors -> IO ()
-uiShowModal sel beh = js_activateSemUiModal (toJSString sel)
+uiTriggerModalAction :: DOM.Element -> ModalBehavior -> IO ()
+uiTriggerModalAction e beh = js_modalAction e
                         (toJSString $ modalBehaviorString beh)
 
-FOREIGN_IMPORT(unsafe, js_activateSemUiModal, JSString -> JSString -> IO (), "$($1).modal($2);")
+FOREIGN_IMPORT(unsafe, js_modalAction, DOM.Element -> JSString -> IO (), "$($1).modal($2);")
 
