@@ -26,9 +26,6 @@ import           Reflex.Dom
 tshow :: Show a => a -> Text
 tshow = T.pack . show
 
-instance (Default a, Reflex t) => Default (Dynamic t a) where
-  def = constDyn def
-
 ------------------------------------------------------------------------------
 -- | A type class for converting data types into appropriate  Semantic UI
 -- class text.
