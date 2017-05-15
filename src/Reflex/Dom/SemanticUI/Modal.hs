@@ -12,17 +12,18 @@
 {-# LANGUAGE TypeFamilies             #-}
 {-# LANGUAGE UndecidableInstances     #-}
 
-#include "foreign-compat.h"
-
 module Reflex.Dom.SemanticUI.Modal where
 
 ------------------------------------------------------------------------------
 import           Control.Monad.Trans
 import           Data.Text (Text)
 import qualified GHCJS.DOM.Types as DOM
+#ifndef ghcjs_HOST_OS
+import           Control.Monad (void)
+import           Control.Lens.Operators ((^.))
+import           Language.Javascript.JSaddle.Object (js1, jsg1)
+#endif
 import           Reflex.Dom
-------------------------------------------------------------------------------
-import           GHCJS.Compat
 ------------------------------------------------------------------------------
 
 
@@ -75,13 +76,20 @@ modalBehaviorString beh =
 uiModal :: MonadWidget t m => Event t ModalBehavior -> m a -> m a
 uiModal beh children = do
     (e,res) <- elAttr' "div" ("class" =: "ui modal") children
-    performEvent (liftIO . uiTriggerModalAction (_element_raw e) <$> beh)
+    performEvent (DOM.liftJSM . uiTriggerModalAction (_element_raw e) <$> beh)
     return res
 
 ------------------------------------------------------------------------------
-uiTriggerModalAction :: DOM.Element -> ModalBehavior -> IO ()
+uiTriggerModalAction :: DOM.Element -> ModalBehavior -> DOM.JSM ()
 uiTriggerModalAction e beh = js_modalAction e
-                        (toJSString $ modalBehaviorString beh)
+                        (DOM.toJSString $ modalBehaviorString beh)
 
-FOREIGN_IMPORT(unsafe, js_modalAction, DOM.Element -> JSString -> IO (), "$($1).modal($2);")
+#ifdef ghcjs_HOST_OS
+foreign import javascript unsafe "$($1).modal($2);"
+    js_modalAction :: DOM.Element -> DOM.JSString -> IO ()
+#else
+js_modalAction :: DOM.Element -> DOM.JSString -> DOM.JSM ()
+js_modalAction e beh =
+  void $ jsg1 ("$"::Text) e ^. js1 ("modal"::Text) beh
+#endif
 
