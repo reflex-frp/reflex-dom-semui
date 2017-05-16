@@ -12,8 +12,6 @@
 {-# LANGUAGE TypeFamilies             #-}
 {-# LANGUAGE UndecidableInstances     #-}
 
-#include "foreign-compat.h"
-
 module Reflex.Dom.SemanticUI.Dropdown where
 
 ------------------------------------------------------------------------------
@@ -28,11 +26,22 @@ import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified GHCJS.DOM.Element as DOM
+#ifdef ghcjs_HOST_OS
+import GHCJS.DOM.Types
+       (liftJSM, JSString, JSVal, toJSString, fromJSString, pFromJSVal,
+        JSM, fromJSValUnchecked)
+import GHCJS.Foreign.Callback (Callback, asyncCallback3)
+#else
+import GHCJS.DOM.Types
+       (liftJSM, JSString, toJSString, JSM, fromJSValUnchecked)
+import Language.Javascript.JSaddle.Object
+       (fun, js1, jsg1, jss, obj)
+import Control.Lens.Operators ((^.))
+#endif
 import           Reflex
 --import           Reflex.Host.Class
 import           Reflex.Dom hiding (fromJSString)
 ------------------------------------------------------------------------------
-import           GHCJS.Compat
 import           Reflex.Dom.SemanticUI.Common (tshow)
 ------------------------------------------------------------------------------
 
@@ -41,16 +50,31 @@ enumItemMap :: (Show a, Enum a) => a -> a -> [(a, Text)]
 enumItemMap from to = map (\a -> (a, T.pack $ show a)) [from..to]
 
 ------------------------------------------------------------------------------
-activateSemUiDropdown :: Text -> IO ()
+activateSemUiDropdown :: Text -> JSM ()
+#ifdef ghcjs_HOST_OS
 activateSemUiDropdown = js_activateSemUiDropdown . toJSString
 
-FOREIGN_IMPORT(unsafe, js_activateSemUiDropdown, JSString -> IO (), "$($1).dropdown({fullTextSearch: true});")
+foreign import javascript unsafe
+  "$($1).dropdown({fullTextSearch: true});"
+  js_activateSemUiDropdown :: JSString -> JSM ()
+#else
+activateSemUiDropdown name = do
+  o <- obj
+  o ^. jss ("fullTextSearch"::Text) True
+  void $ jsg1 ("$"::Text) name ^. js1 ("dropdown"::Text) o
+#endif
 
-activateSemUiDropdownEl :: DOM.Element -> IO ()
-activateSemUiDropdownEl = js_activateSemUiDropdownEl . pToJSVal
-
-FOREIGN_IMPORT(unsafe, js_activateSemUiDropdownEl, JSVal -> IO (), "$($1).dropdown({fullTextSearch: true});")
-
+#ifdef ghcjs_HOST_OS
+foreign import javascript unsafe
+  "$($1).dropdown({fullTextSearch: true});"
+  activateSemUiDropdownEl :: DOM.Element -> JSM ()
+#else
+activateSemUiDropdownEl :: DOM.Element -> JSM ()
+activateSemUiDropdownEl e = do
+  o <- obj
+  o ^. jss ("fullTextSearch"::Text) True
+  void $ jsg1 ("$"::Text) e ^. js1 ("dropdown"::Text) o
+#endif
 
 data DropdownMulti t a = DropdownMulti
     { _dm_value :: Dynamic t a
@@ -69,12 +93,11 @@ activateSemUiDropdownMulti
     -> m (DropdownMulti t a)
 activateSemUiDropdownMulti dmc = do
     pb <- getPostBuild
-    let act cb = liftIO $ do
-          jscb <- asyncCallback3 $ \_ t _ -> liftIO $
-              cb $ read $ fromJSString $ pFromJSVal t
-          js_activateSemUiDropdownMulti
-            (toJSString $ _dmc_elementId dmc) jscb
-            (toJSBool $ _dmc_fullTextSearch dmc)
+    let act cb = liftJSM $
+          activateSemUiDropdownMulti'
+            (toJSString $ _dmc_elementId dmc)
+            (liftIO . cb . read)
+            (_dmc_fullTextSearch dmc)
     e <- performEventAsync (act <$ pb)
     val <- holdDyn (_dmc_initialValue dmc) e
     return $! DropdownMulti val
@@ -96,7 +119,28 @@ activateSemUiDropdownMulti dmc = do
     --val <- holdDyn (_dmc_initialValue dmc) e
     --return $! DropdownMulti val
 
-FOREIGN_IMPORT(unsafe, js_activateSemUiDropdownMulti, JSString -> Callback (JSVal -> JSVal -> JSVal -> IO ()) -> JSVal -> IO (), "(function(){ $($1).dropdown({onChange: $2, fullTextSearch: $3}); })()")
+#ifdef ghcjs_HOST_OS
+activateSemUiDropdownMulti' :: JSString -> (String -> JSM ()) -> Bool -> JSM ()
+activateSemUiDropdownMulti' name onChange full = do
+  jscb <- asyncCallback3 $ \_ t _ -> liftIO $
+    onChange $ fromJSString $ pFromJSVal t
+  js_activateSemUiDropdownMulti name jscb full
+
+foreign import javascript unsafe
+  "(function(){ $($1).dropdown({onChange: $2, fullTextSearch: $3}); })()"
+  js_activateSemUiDropdownMulti
+    :: JSString
+    -> Callback (JSVal -> JSVal -> JSVal -> JSM ())
+    -> Bool
+    -> JSM ()
+#else
+activateSemUiDropdownMulti' :: JSString -> (String -> JSM ()) -> Bool -> JSM ()
+activateSemUiDropdownMulti' name onChange full = do
+  o <- obj
+  o ^. jss ("onChange"::Text) (fun $ \_ _ [_, t, _] -> onChange =<< fromJSValUnchecked t)
+  o ^. jss ("fullTextSearch"::Text) full
+  void $ jsg1 ("$"::Text) name ^. js1 ("dropdown"::Text) o
+#endif
 
 -- Multi-select sem-ui dropdown is not working properly yet.  Not sure how
 -- to get the current value.
@@ -138,7 +182,7 @@ semUiDropdownMulti' elId iv vals attrs = do
     d <- dropdown (tshow iv) (constDyn $ M.mapKeys tshow vals) $ def &
       attributes .~ (constDyn $ attrs <> ("id" =: elId))
     pb <- getPostBuild
-    performEvent_ (liftIO (activateSemUiDropdown (T.cons '#' elId)) <$ pb)
+    performEvent_ (liftJSM (activateSemUiDropdown (T.cons '#' elId)) <$ pb)
     return $ value d
 
 -- | Wrapper around the reflex-dom dropdown that calls the sem-ui dropdown
@@ -174,7 +218,7 @@ semUiDropdown' elId iv vals attrs = do
     d <- dropdown iv (constDyn vals) $ def &
       attributes .~ (constDyn $ attrs <> ("id" =: elId))
     pb <- getPostBuild
-    performEvent_ (liftIO (activateSemUiDropdown (T.cons '#' elId)) <$ pb)
+    performEvent_ (liftJSM (activateSemUiDropdown (T.cons '#' elId)) <$ pb)
     return $ value d
 
 
@@ -237,5 +281,5 @@ semUiDropdownWithItems elId opts iv vals attrs = do
       return $ switchPromptlyDyn $ leftmost . M.elems <$> sel
 
   pb <- getPostBuild
-  performEvent_ (liftIO (activateSemUiDropdownEl $ _element_raw elDD) <$ pb)
+  performEvent_ (liftJSM (activateSemUiDropdownEl $ _element_raw elDD) <$ pb)
   holdDyn iv (elChoice)

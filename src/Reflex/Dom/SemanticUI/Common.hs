@@ -15,7 +15,6 @@
 module Reflex.Dom.SemanticUI.Common where
 
 ------------------------------------------------------------------------------
-import           Data.Default
 import           Data.Text (Text)
 import qualified Data.Text as T
 import           Reflex.Dom

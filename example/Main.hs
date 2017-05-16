@@ -10,6 +10,7 @@ import Data.Monoid ((<>))
 import Data.Text (Text)
 import Reflex.Dom
 import Reflex.Dom.SemanticUI
+import Reflex.Dom.Internal () -- TODO remove this once we solve orphan instance issue
 
 main :: IO ()
 main = mainWidget $ do
