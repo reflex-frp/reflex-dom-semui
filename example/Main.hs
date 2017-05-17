@@ -68,19 +68,18 @@ main = mainWidget $ divClass "ui container" $ do
         rec el "label" $ do
               text "Single value"
               divClass "ui left pointing label" $ display card
-            initial <- holdDyn (Just Visa) $ (Just Visa) <$ resetEvent
             card <- semUiDropdownNew cards [DOFSelection] $
               def & dropdownConf_placeholder .~ "Card Type"
-                  & setValue .~ initial
+                  & setValue .~ (Just Visa <$ resetEvent)
+                  & dropdownConf_initialValue ?~ Visa
         return ()
       divClass "field" $ do
         rec el "label" $ do
               text "Searchable single value"
               divClass "ui left pointing label" $ display contact
-            initial <- holdDyn Nothing $ Nothing <$ resetEvent
             contact <- semUiDropdownNew contacts [DOFSearch, DOFSelection] $
               def & dropdownConf_placeholder .~ "Saved Contacts"
-                  & setValue .~ initial
+                  & setValue .~ (Nothing <$ resetEvent)
         return ()
 
     divClass "two fields" $ do
@@ -88,10 +87,9 @@ main = mainWidget $ divClass "ui container" $ do
         rec el "label" $ do
               text "Multi value"
               divClass "ui left pointing label" $ display card
-            initial <- holdDyn [] $ [] <$ resetEvent
             card <- semUiDropdownMultiNew cards [DOFSelection] $
               def & dropdownConf_placeholder .~ "Card Type"
-                  & setValue .~ initial
+                  & setValue .~ (mempty <$ resetEvent)
         return ()
       divClass "field" $ do
         rec el "label" $ do
@@ -100,7 +98,8 @@ main = mainWidget $ divClass "ui container" $ do
             initial <- holdDyn [Matt, Elliot] $ [Matt, Elliot] <$ resetEvent
             contact <- semUiDropdownMultiNew contacts [DOFSearch, DOFSelection] $
               def & dropdownConf_placeholder .~ "Saved Contacts"
-                  & setValue .~ initial
+                  & setValue .~ ([Matt, Elliot] <$ resetEvent)
+                  & dropdownConf_initialValue .~ [Matt, Elliot]
         return ()
 
   el "p" $ text "These are examples of semantic-ui widgets."

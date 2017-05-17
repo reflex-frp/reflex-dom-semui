@@ -313,7 +313,8 @@ dropdownSetExactly e is =
 
 -- | Config for new semantic dropdowns
 data DropdownConf t a = DropdownConf
-  { _dropdownConf_setValue :: Dynamic t a
+  { _dropdownConf_initialValue :: a
+  , _dropdownConf_setValue :: Event t a
   , _dropdownConf_attributes :: Map Text Text
   , _dropdownConf_placeholder :: Text
   }
@@ -322,14 +323,16 @@ $(makeLenses ''DropdownConf)
 
 instance (Reflex t) => Default (DropdownConf t (Maybe a)) where
   def = DropdownConf
-    { _dropdownConf_setValue = constDyn Nothing
+    { _dropdownConf_initialValue = Nothing
+    , _dropdownConf_setValue = never
     , _dropdownConf_attributes = mempty
     , _dropdownConf_placeholder = mempty
     }
 
 instance (Reflex t) => Default (DropdownConf t [a]) where
   def = DropdownConf
-    { _dropdownConf_setValue = constDyn mempty
+    { _dropdownConf_initialValue = mempty
+    , _dropdownConf_setValue = never
     , _dropdownConf_attributes = mempty
     , _dropdownConf_placeholder = mempty
     }
@@ -339,7 +342,7 @@ instance HasAttributes (DropdownConf t a) where
   attributes = dropdownConf_attributes
 
 instance HasSetValue (DropdownConf t a) where
-  type SetValue (DropdownConf t a) = Dynamic t a
+  type SetValue (DropdownConf t a) = Event t a
   setValue = dropdownConf_setValue
 
 -- | Helper function
@@ -363,13 +366,13 @@ semUiDropdownNew items options config = do
 
   -- setValue events
   performEvent_ $ liftJSM . setDropdown . maybeToList . (>>= getIndex)
-               <$> updated (_dropdownConf_setValue config)
+               <$> _dropdownConf_setValue config
 
   -- Set initial value
-  initialValue <- sample $ current $ _dropdownConf_setValue config
   pb <- getPostBuild
   performEvent $
-    liftJSM (setDropdown $ maybeToList $ getIndex =<< initialValue) <$ pb
+    liftJSM (setDropdown $ maybeToList $ getIndex
+      =<< _dropdownConf_initialValue config) <$ pb
 
   holdDyn Nothing $ indexToItem items <$> evt
 
@@ -389,13 +392,13 @@ semUiDropdownMultiNew items options config = do
 
   -- setValue events
   performEvent_ $ liftJSM . setDropdown . V.toList . getIndices
-               <$> updated (_dropdownConf_setValue config)
+               <$> _dropdownConf_setValue config
 
   -- Set initial value
-  initialValues <- sample $ current $ _dropdownConf_setValue config
   pb <- getPostBuild
   performEvent $
-    liftJSM (setDropdown $ V.toList $ getIndices initialValues) <$ pb
+    liftJSM (setDropdown $ V.toList $ getIndices $
+      _dropdownConf_initialValue config) <$ pb
 
   holdDyn [] $ catMaybes . map (indexToItem items) . T.splitOn "," <$> evt
 
