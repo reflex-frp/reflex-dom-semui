@@ -15,6 +15,10 @@ import qualified Data.Vector as V
 import Reflex.Dom
 import Reflex.Dom.SemanticUI
 import Reflex.Dom.Internal () -- TODO remove this once we solve orphan instance issue
+
+import StateEnum
+import CountryEnum
+
 -- | Contacts
 data ContactEnum
   = Jenny | Elliot | Stevie | Christian | Matt | Justen
@@ -59,9 +63,13 @@ main = mainWidget $ divClass "ui container" $ do
   let resetEvent = domEvent Click resetDropdowns
   divClass "ui bottom attached segment form" $ do
     let makeContact x = (x, DropdownItemConfig (tshow x) $ renderContact x)
-        contacts = V.fromList $ map makeContact [minBound..maxBound]
+        contacts = map makeContact [minBound..maxBound]
         makeCard x = (x, DropdownItemConfig "" $ renderCard x)
-        cards = V.fromList $ map makeCard [minBound..maxBound]
+        cards = map makeCard [minBound..maxBound]
+        makeState x = (x, DropdownItemConfig "" $ text $ showState x)
+        states = map makeState [minBound..maxBound]
+        makeCountry x = (x, DropdownItemConfig "" $ renderCountry x)
+        countries = map makeCountry [minBound..maxBound]
 
     divClass "two fields" $ do
       divClass "field" $ do
@@ -95,12 +103,31 @@ main = mainWidget $ divClass "ui container" $ do
         rec el "label" $ do
               text "Searchable multi value"
               divClass "ui left pointing label" $ display contact
-            initial <- holdDyn [Matt, Elliot] $ [Matt, Elliot] <$ resetEvent
             contact <- semUiDropdownMultiNew contacts [DOFSearch, DOFSelection] $
               def & dropdownConf_placeholder .~ "Saved Contacts"
                   & setValue .~ ([Matt, Elliot] <$ resetEvent)
                   & dropdownConf_initialValue .~ [Matt, Elliot]
         return ()
+
+    divClass "two fields" $ do
+      divClass "field" $ do
+        rec el "label" $ do
+              text "States"
+              divClass "ui left pointing label" $ display state
+            state <- semUiDropdownMultiNew states [DOFSelection] $
+              def & dropdownConf_placeholder .~ "States"
+                  & setValue .~ (mempty <$ resetEvent)
+        return ()
+      divClass "field" $ do
+        rec el "label" $ do
+              text "Country"
+              divClass "ui left pointing label" $ display country
+            country <- semUiDropdownNew countries [DOFSearch, DOFSelection] $
+              def & dropdownConf_placeholder .~ "Country"
+                  & setValue .~ (Nothing <$ resetEvent)
+        return ()
+
+
 
   el "p" $ text "These are examples of semantic-ui widgets."
   el "p" $ uiButton (huge $ inverted $ blue def) (text "I'm a huge, inverted, blue button!")

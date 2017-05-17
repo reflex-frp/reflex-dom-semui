@@ -27,8 +27,6 @@ import           Data.Maybe (catMaybes, maybeToList)
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           Data.Vector (Vector, (!?))
-import qualified Data.Vector as V
 import qualified GHCJS.DOM.Element as DOM
 #ifdef ghcjs_HOST_OS
 import GHCJS.DOM.Types
@@ -297,7 +295,7 @@ activateDropdown e onChange = do
 #ifdef ghcjs_HOST_OS
 dropdownSetExactly :: DOM.Element -> [Int] -> JSM ()
 dropdownSetExactly e is = do
-  jsVal <- toJSVal $ map (tshow) is
+  jsVal <- toJSVal $ map tshow is
   js_dropdownSetExactly e jsVal
 
 foreign import javascript unsafe
@@ -346,23 +344,29 @@ instance HasSetValue (DropdownConf t a) where
   setValue = dropdownConf_setValue
 
 -- | Helper function
-indexToItem :: Vector (a, DropdownItemConfig m) -> Text -> Maybe a
+indexToItem :: [(a, DropdownItemConfig m)] -> Text -> Maybe a
 indexToItem items i' = do
   i <- readMaybe $ T.unpack i'
   fst <$> items !? i
 
+-- | Safe indexing into lists
+(!?) :: [a] -> Int -> Maybe a
+[] !? _ = Nothing
+(x:_) !? 0 = Just x
+(_:xs) !? n = xs !? (n - 1)
+
 -- | Semantic-UI dropdown with static items
 semUiDropdownNew
   :: (MonadWidget t m, Eq a)
-  => Vector (a, DropdownItemConfig m) -- ^ Items
+  => [(a, DropdownItemConfig m)] -- ^ Items
   -> [DropdownOptFlag]                -- ^ Options
   -> DropdownConf t (Maybe a)         -- ^ Dropdown config
   -> m (Dynamic t (Maybe a))
 semUiDropdownNew items options config = do
-  (el, evt) <- dropdownInternal items options False
+  (divEl, evt) <- dropdownInternal items options False
     (_dropdownConf_placeholder config) (_dropdownConf_attributes config)
-  let getIndex v = V.findIndex ((==) v . fst) items
-      setDropdown = dropdownSetExactly (_element_raw el)
+  let getIndex v = L.findIndex ((==) v . fst) items
+      setDropdown = dropdownSetExactly (_element_raw divEl)
 
   -- setValue events
   performEvent_ $ liftJSM . setDropdown . maybeToList . (>>= getIndex)
@@ -379,25 +383,25 @@ semUiDropdownNew items options config = do
 -- | Semantic-UI dropdown with multiple static items
 semUiDropdownMultiNew
   :: (MonadWidget t m, Eq a)
-  => Vector (a, DropdownItemConfig m) -- ^ Items
+  => [(a, DropdownItemConfig m)] -- ^ Items
   -> [DropdownOptFlag]                -- ^ Options
   -> DropdownConf t [a]               -- ^ Dropdown config
   -> m (Dynamic t [a])
 semUiDropdownMultiNew items options config = do
-  (el, evt) <- dropdownInternal items options True
+  (divEl, evt) <- dropdownInternal items options True
     (_dropdownConf_placeholder config) (_dropdownConf_attributes config)
 
-  let getIndices vs = V.findIndices ((`elem` vs) . fst) items
-      setDropdown = dropdownSetExactly (_element_raw el)
+  let getIndices vs = L.findIndices ((`elem` vs) . fst) items
+      setDropdown = dropdownSetExactly (_element_raw divEl)
 
   -- setValue events
-  performEvent_ $ liftJSM . setDropdown . V.toList . getIndices
+  performEvent_ $ liftJSM . setDropdown . getIndices
                <$> _dropdownConf_setValue config
 
   -- Set initial value
   pb <- getPostBuild
   performEvent $
-    liftJSM (setDropdown $ V.toList $ getIndices $
+    liftJSM (setDropdown . getIndices $
       _dropdownConf_initialValue config) <$ pb
 
   holdDyn [] $ catMaybes . map (indexToItem items) . T.splitOn "," <$> evt
@@ -405,7 +409,7 @@ semUiDropdownMultiNew items options config = do
 -- | Internal function with shared behaviour
 dropdownInternal
   :: (MonadWidget t m, Eq a)
-  => Vector (a, DropdownItemConfig m) -- ^ Items
+  => [(a, DropdownItemConfig m)] -- ^ Items
   -> [DropdownOptFlag]                -- ^ Options
   -> Bool                             -- ^ Is multiple dropdown
   -> Text                             -- ^ Placeholder
@@ -414,7 +418,7 @@ dropdownInternal
 dropdownInternal items options isMulti placeholder attrs = do
 
   let classes = dropdownClass options <> if isMulti then " multiple" else ""
-  (el, _) <- elAttr' "div" ("class" =: classes <> attrs) $ do
+  (divEl, _) <- elAttr' "div" ("class" =: classes <> attrs) $ do
 
     -- This holds the placeholder. Initial value must be set by js function in
     -- wrapper.
@@ -422,18 +426,19 @@ dropdownInternal items options isMulti placeholder attrs = do
     elAttr "i" ("class" =: "dropdown icon") blank
 
     -- Dropdown menu
-    divClass "menu" $ do
-      let itemAttrs n = "class" =: "item" <> "data-value" =: tshow n
-      let putItem n (DropdownItemConfig "" m) = elAttr "div" (itemAttrs n) m
-          putItem n (DropdownItemConfig t m) = elAttr "div" (itemAttrs n <> "data-text" =: t) m
-      V.imapM_ putItem $ snd <$> items
+    let itemDiv n a = elAttr "div"
+          ("class" =: "item" <> "data-value" =: tshow n <> a)
+        putItem n (_, conf) = n + 1 <$ case conf of
+          DropdownItemConfig "" m -> itemDiv n mempty m
+          DropdownItemConfig t m -> itemDiv n ("data-text" =: t) m
+    divClass "menu" $ foldM_ putItem (0 :: Int) items
 
   -- Setup the event and callback function for when the value is changed
   (onChangeEvent, onChangeCallback) <- newTriggerEvent
 
   -- Activate the dropdown after element is built
   schedulePostBuild $ liftJSM $
-    activateDropdown (_element_raw el) $ liftIO . onChangeCallback
+    activateDropdown (_element_raw divEl) $ liftIO . onChangeCallback
 
-  return (el, onChangeEvent)
+  return (divEl, onChangeEvent)
 
