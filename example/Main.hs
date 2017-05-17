@@ -11,7 +11,6 @@ import Data.Map (Map, fromList)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Vector as V
 import Reflex.Dom
 import Reflex.Dom.SemanticUI
 import Reflex.Dom.Internal () -- TODO remove this once we solve orphan instance issue
@@ -83,49 +82,61 @@ main = mainWidget $ divClass "ui container" $ do
         return ()
       divClass "field" $ do
         rec el "label" $ do
-              text "Searchable single value"
+              text "Single value, search"
               divClass "ui left pointing label" $ display contact
             contact <- semUiDropdownNew contacts [DOFSearch, DOFSelection] $
               def & dropdownConf_placeholder .~ "Saved Contacts"
                   & setValue .~ (Nothing <$ resetEvent)
         return ()
 
-    divClass "two fields" $ do
-      divClass "field" $ do
-        rec el "label" $ do
-              text "Multi value"
-              divClass "ui left pointing label" $ display card
-            card <- semUiDropdownMultiNew cards [DOFSelection] $
-              def & dropdownConf_placeholder .~ "Card Type"
-                  & setValue .~ (mempty <$ resetEvent)
-        return ()
-      divClass "field" $ do
-        rec el "label" $ do
-              text "Searchable multi value"
-              divClass "ui left pointing label" $ display contact
-            contact <- semUiDropdownMultiNew contacts [DOFSearch, DOFSelection] $
-              def & dropdownConf_placeholder .~ "Saved Contacts"
-                  & setValue .~ ([Matt, Elliot] <$ resetEvent)
-                  & dropdownConf_initialValue .~ [Matt, Elliot]
-        return ()
+    divClass "field" $ do
+      rec el "label" $ do
+            text "Multi value"
+            divClass "ui left pointing label" $ display card
+          card <- semUiDropdownMultiNew cards [DOFSelection] $
+            def & dropdownConf_placeholder .~ "Card Type"
+                & setValue .~ (mempty <$ resetEvent)
+      return ()
+
+    divClass "field" $ do
+      rec el "label" $ do
+            text "Multi value, full-text search"
+            divClass "ui left pointing label" $ display contact
+          contact <- semUiDropdownMultiNew contacts [DOFSearch, DOFSelection] $
+            def & dropdownConf_placeholder .~ "Saved Contacts"
+                & setValue .~ ([Matt, Elliot] <$ resetEvent)
+                & dropdownConf_initialValue .~ [Matt, Elliot]
+                & dropdownConf_fullTextSearch .~ True
+      return ()
 
     divClass "two fields" $ do
       divClass "field" $ do
         rec el "label" $ do
-              text "States"
+              text "Multi value, limited"
               divClass "ui left pointing label" $ display state
             state <- semUiDropdownMultiNew states [DOFSelection] $
               def & dropdownConf_placeholder .~ "States"
                   & setValue .~ (mempty <$ resetEvent)
+                  & dropdownConf_maxSelections ?~ 3
         return ()
       divClass "field" $ do
         rec el "label" $ do
-              text "Country"
+              text "Multi value, search, hidden labels"
               divClass "ui left pointing label" $ display country
-            country <- semUiDropdownNew countries [DOFSearch, DOFSelection] $
+            country <- semUiDropdownMultiNew countries [DOFSearch, DOFSelection] $
               def & dropdownConf_placeholder .~ "Country"
-                  & setValue .~ (Nothing <$ resetEvent)
+                  & setValue .~ (mempty <$ resetEvent)
+                  & dropdownConf_useLabels .~ False
         return ()
+
+-- This causes startup time to go to ~5 seconds
+--    divClass "field" $ do
+--      rec el "label" $ do
+--            text "Country old"
+--            divClass "ui left pointing label" $ display country
+--          country <- semUiDropdownWithItems "country-dropdown"
+--            [DOFSelection, DOFSearch] US (constDyn $ fromList countries) mempty
+--      return ()
 
 
 

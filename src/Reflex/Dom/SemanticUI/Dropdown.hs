@@ -271,29 +271,40 @@ semUiDropdownWithItems elId opts iv vals attrs = do
 ------------------------------------------------------------------------------
 -- New implementation
 
+-- | Given a div element, tell semantic-ui to convert it to a dropdown with the
+-- given options. The callback function is called on change with the currently
+-- selected value.
+activateDropdown :: DOM.Element -> Maybe Int -> Bool -> Bool
+                 -> (Text -> JSM ()) -> JSM ()
 #ifdef ghcjs_HOST_OS
-activateDropdown :: DOM.Element -> (Text -> JSM ()) -> JSM ()
-activateDropdown e onChange = do
+activateDropdown e mMaxSel useLabels fullText onChange = do
   cb <- asyncCallback1 $ onChange . pFromJSVal
-  js_activateDropdown e cb
+  let maxSel = maybe (pToJSVal False) pToJSVal mMaxSel
+  js_activateDropdown e maxSel useLabels fullText cb
 foreign import javascript unsafe
   "$($1).dropdown({ forceSelection : false \
-                  , onChange: function(value){ $2(value); } \
-                  , fullTextSearch: true });"
-  js_activateDropdown :: DOM.Element -> Callback (JSVal -> JSM ()) -> JSM ()
+                  , maxSelections: $2 \
+                  , useLabels: $3 \
+                  , fullTextSearch: $4 \
+                  , onChange: function(value){ $5(value); } });"
+  js_activateDropdown :: DOM.Element -> JSVal -> Bool -> Bool
+                      -> Callback (JSVal -> JSM ()) -> JSM ()
 #else
-activateDropdown :: DOM.Element -> (Text -> JSM ()) -> JSM ()
-activateDropdown e onChange = do
+activateDropdown e maxSel useLabels fullText onChange = do
   o <- obj
   o ^. jss ("forceSelection"::Text) False
+  o ^. jss ("maxSelections"::Text) maxSel
+  o ^. jss ("useLabels"::Text) useLabels
+  o ^. jss ("fullTextSearch"::Text) fullText
   o ^. jss ("onChange"::Text) (fun $ \_ _ [t, _, _] ->
     onChange =<< fromJSValUnchecked t)
-  o ^. jss ("fullTextSearch"::Text) True
   void $ jsg1 ("$"::Text) e ^. js1 ("dropdown"::Text) o
 #endif
 
-#ifdef ghcjs_HOST_OS
+-- | Given a dropdown element, set the value to the given list. For single
+-- dropdowns just provide a singleton list.
 dropdownSetExactly :: DOM.Element -> [Int] -> JSM ()
+#ifdef ghcjs_HOST_OS
 dropdownSetExactly e is = do
   jsVal <- toJSVal $ map tshow is
   js_dropdownSetExactly e jsVal
@@ -302,7 +313,6 @@ foreign import javascript unsafe
   "$($1).dropdown('set exactly', $2);"
   js_dropdownSetExactly :: DOM.Element -> JSVal -> JSM ()
 #else
-dropdownSetExactly :: DOM.Element -> [Int] -> JSM ()
 dropdownSetExactly e is =
   void $ jsg1 ("$"::Text) e ^. js2 ("dropdown"::Text) ("set exactly"::Text) is
 #endif
@@ -315,6 +325,9 @@ data DropdownConf t a = DropdownConf
   , _dropdownConf_setValue :: Event t a
   , _dropdownConf_attributes :: Map Text Text
   , _dropdownConf_placeholder :: Text
+  , _dropdownConf_maxSelections :: Maybe Int
+  , _dropdownConf_useLabels :: Bool
+  , _dropdownConf_fullTextSearch :: Bool
   }
 
 $(makeLenses ''DropdownConf)
@@ -325,6 +338,9 @@ instance (Reflex t) => Default (DropdownConf t (Maybe a)) where
     , _dropdownConf_setValue = never
     , _dropdownConf_attributes = mempty
     , _dropdownConf_placeholder = mempty
+    , _dropdownConf_maxSelections = Nothing
+    , _dropdownConf_useLabels = True
+    , _dropdownConf_fullTextSearch = False
     }
 
 instance (Reflex t) => Default (DropdownConf t [a]) where
@@ -333,6 +349,9 @@ instance (Reflex t) => Default (DropdownConf t [a]) where
     , _dropdownConf_setValue = never
     , _dropdownConf_attributes = mempty
     , _dropdownConf_placeholder = mempty
+    , _dropdownConf_maxSelections = Nothing
+    , _dropdownConf_useLabels = True
+    , _dropdownConf_fullTextSearch = False
     }
 
 instance HasAttributes (DropdownConf t a) where
@@ -358,13 +377,16 @@ indexToItem items i' = do
 -- | Semantic-UI dropdown with static items
 semUiDropdownNew
   :: (MonadWidget t m, Eq a)
-  => [(a, DropdownItemConfig m)] -- ^ Items
-  -> [DropdownOptFlag]                -- ^ Options
-  -> DropdownConf t (Maybe a)         -- ^ Dropdown config
+  => [(a, DropdownItemConfig m)]  -- ^ Items
+  -> [DropdownOptFlag]            -- ^ Options
+  -> DropdownConf t (Maybe a)     -- ^ Dropdown config
   -> m (Dynamic t (Maybe a))
 semUiDropdownNew items options config = do
-  (divEl, evt) <- dropdownInternal items options False
-    (_dropdownConf_placeholder config) (_dropdownConf_attributes config)
+  (divEl, evt) <- dropdownInternal items options Single
+    (_dropdownConf_useLabels config)
+    (_dropdownConf_fullTextSearch config)
+    (_dropdownConf_placeholder config)
+    (_dropdownConf_attributes config)
   let getIndex v = L.findIndex ((==) v . fst) items
       setDropdown = dropdownSetExactly (_element_raw divEl)
 
@@ -383,13 +405,17 @@ semUiDropdownNew items options config = do
 -- | Semantic-UI dropdown with multiple static items
 semUiDropdownMultiNew
   :: (MonadWidget t m, Eq a)
-  => [(a, DropdownItemConfig m)] -- ^ Items
-  -> [DropdownOptFlag]                -- ^ Options
-  -> DropdownConf t [a]               -- ^ Dropdown config
+  => [(a, DropdownItemConfig m)]  -- ^ Items
+  -> [DropdownOptFlag]            -- ^ Options
+  -> DropdownConf t [a]           -- ^ Dropdown config
   -> m (Dynamic t [a])
 semUiDropdownMultiNew items options config = do
-  (divEl, evt) <- dropdownInternal items options True
-    (_dropdownConf_placeholder config) (_dropdownConf_attributes config)
+  (divEl, evt) <- dropdownInternal items options
+    (Multi $ _dropdownConf_maxSelections config)
+    (_dropdownConf_useLabels config)
+    (_dropdownConf_fullTextSearch config)
+    (_dropdownConf_placeholder config)
+    (_dropdownConf_attributes config)
 
   let getIndices vs = L.findIndices ((`elem` vs) . fst) items
       setDropdown = dropdownSetExactly (_element_raw divEl)
@@ -406,18 +432,30 @@ semUiDropdownMultiNew items options config = do
 
   holdDyn [] $ catMaybes . map (indexToItem items) . T.splitOn "," <$> evt
 
+data DropdownType = Single | Multi (Maybe Int)
+isMulti :: DropdownType -> Bool
+isMulti Single = False
+isMulti (Multi _) = True
+
+toMaxSel :: DropdownType -> Maybe Int
+toMaxSel Single = Nothing
+toMaxSel (Multi m) = m
+
 -- | Internal function with shared behaviour
 dropdownInternal
   :: (MonadWidget t m, Eq a)
-  => [(a, DropdownItemConfig m)] -- ^ Items
-  -> [DropdownOptFlag]                -- ^ Options
-  -> Bool                             -- ^ Is multiple dropdown
-  -> Text                             -- ^ Placeholder
-  -> Map Text Text                    -- ^ Dropdown div attributes
+  => [(a, DropdownItemConfig m)]  -- ^ Items
+  -> [DropdownOptFlag]            -- ^ Options
+  -> DropdownType                 -- ^ Maximum number of selections
+  -> Bool                         -- ^ UseLabels option
+  -> Bool                         -- ^ Full-text search
+  -> Text                         -- ^ Placeholder
+  -> Map Text Text                -- ^ Dropdown div attributes
   -> m (El t, Event t Text)
-dropdownInternal items options isMulti placeholder attrs = do
+dropdownInternal items options dtype useLabels fullText placeholder attrs = do
 
-  let classes = dropdownClass options <> if isMulti then " multiple" else ""
+  let multiClass = if isMulti dtype then " multiple" else ""
+      classes = dropdownClass options <> multiClass
   (divEl, _) <- elAttr' "div" ("class" =: classes <> attrs) $ do
 
     -- This holds the placeholder. Initial value must be set by js function in
@@ -438,7 +476,8 @@ dropdownInternal items options isMulti placeholder attrs = do
 
   -- Activate the dropdown after element is built
   schedulePostBuild $ liftJSM $
-    activateDropdown (_element_raw divEl) $ liftIO . onChangeCallback
+    activateDropdown (_element_raw divEl) (toMaxSel dtype) useLabels fullText $
+      liftIO . onChangeCallback
 
   return (divEl, onChangeEvent)
 
