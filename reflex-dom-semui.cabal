@@ -15,6 +15,7 @@ cabal-version:       >=1.10
 
 extra-source-files:
   lib/semantic.min.css
+  lib/themes
 
 library
   hs-source-dirs: src
@@ -39,10 +40,12 @@ library
     , data-default
     , file-embed >= 0.0.10 && < 0.1
     , ghcjs-dom
+    , lens
     , mtl
     , reflex     >= 0.5 && < 0.6
     , reflex-dom >= 0.4 && < 0.5
     , text
+    , vector
 
   if impl(ghcjs)
     build-depends: ghcjs-base
@@ -69,11 +72,13 @@ test-suite example
     , containers
     , dependent-sum
     , ghcjs-dom
+    , lens
     , mtl
     , reflex            >= 0.5 && < 0.6
     , reflex-dom        >= 0.4 && < 0.5
     , reflex-dom-semui
     , text
+    , vector
 
 source-repository head
   type: git
