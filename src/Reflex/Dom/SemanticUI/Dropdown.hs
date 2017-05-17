@@ -305,7 +305,7 @@ foreign import javascript unsafe
   js_dropdownSetExactly :: DOM.Element -> JSVal -> JSM ()
 #else
 dropdownSetExactly :: DOM.Element -> [Int] -> JSM ()
-dropdownSetExactly e is = do
+dropdownSetExactly e is =
   void $ jsg1 ("$"::Text) e ^. js2 ("dropdown"::Text) ("set exactly"::Text) is
 #endif
 
@@ -430,7 +430,7 @@ dropdownInternal items options isMulti placeholder attrs = do
 
   -- Activate the dropdown after element is built
   schedulePostBuild $ liftJSM $
-    activateDropdown (_element_raw el) onChangeCallback
+    activateDropdown (_element_raw el) $ liftIO . onChangeCallback
 
   return (el, onChangeEvent)
 
