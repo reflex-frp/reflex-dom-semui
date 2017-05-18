@@ -2,6 +2,7 @@
 
 module Reflex.Dom.SemanticUI
   ( module Reflex.Dom.SemanticUI.Button
+  , module Reflex.Dom.SemanticUI.Checkbox
   , module Reflex.Dom.SemanticUI.Common
   , module Reflex.Dom.SemanticUI.Dropdown
   , module Reflex.Dom.SemanticUI.Icon
@@ -15,6 +16,7 @@ import           Data.FileEmbed
 import           Data.Text (Text)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.SemanticUI.Button
+import           Reflex.Dom.SemanticUI.Checkbox
 import           Reflex.Dom.SemanticUI.Common
 import           Reflex.Dom.SemanticUI.Dropdown
 import           Reflex.Dom.SemanticUI.Icon

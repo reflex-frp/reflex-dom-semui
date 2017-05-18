@@ -7,6 +7,7 @@
 module Main (main) where
 
 import Control.Lens
+import Control.Monad (void)
 import Data.Map (Map, fromList)
 import Data.Monoid ((<>))
 import Data.Text (Text)
@@ -52,8 +53,52 @@ renderCard card = do
   elClass "i" (T.toLower (tshow card) <> " icon") blank
   text $ showCard card
 
-main :: IO ()
-main = mainWidget $ divClass "ui container" $ do
+checkboxes :: MonadWidget t m => m ()
+checkboxes = do
+
+  resetEvent <- divClass "ui top attached segment" $ do
+    elClass "h4" "ui header" $ do
+      text "Checkboxes"
+      uiButton (rightFloated . mini . compact . basic <$> def) $ text "Reset"
+
+  divClass "ui bottom attached segment form" $ do
+    divClass "two fields" $ do
+
+      divClass "field" $ do
+        el "label" $ text "Checkboxes with labels"
+        divClass "ui compact segment" $ do
+          c1 <- uiCheckbox (text "Normal checkbox") $
+            def & setValue .~ (False <$ resetEvent)
+          divClass "ui left pointing label" $ display $ value c1
+        divClass "ui compact segment" $ do
+          c2 <- uiCheckbox (text "Toggle checkbox") $
+            def & checkboxConf_type .~ [CbToggle]
+                & setValue .~ (False <$ resetEvent)
+          divClass "ui left pointing label" $ display $ value c2
+        divClass "ui compact segment" $ do
+          c3 <- uiCheckbox (text "Slider checkbox") $
+            def & checkboxConf_type .~ [CbSlider]
+                & setValue .~ (False <$ resetEvent)
+          divClass "ui left pointing label" $ display $ value c3
+
+      void $ divClass "field" $ do
+        el "label" $ text "Fitted checkboxes"
+        divClass "ui compact segment" $ do
+          uiCheckbox blank $
+            def & checkboxConf_type .~ [CbFitted]
+                & setValue .~ (False <$ resetEvent)
+        divClass "ui compact segment" $ do
+          uiCheckbox blank $
+            def & checkboxConf_type .~ [CbFitted, CbToggle]
+                & setValue .~ (False <$ resetEvent)
+        divClass "ui compact segment" $ do
+          uiCheckbox blank $
+            def & checkboxConf_type .~ [CbFitted, CbSlider]
+                & setValue .~ (False <$ resetEvent)
+
+dropdowns :: MonadWidget t m => m ()
+dropdowns = do
+
   resetEvent <- divClass "ui top attached segment" $ do
     elClass "h4" "ui header" $ do
       text "Dropdowns"
@@ -74,7 +119,7 @@ main = mainWidget $ divClass "ui container" $ do
         rec el "label" $ do
               text "Single value"
               divClass "ui left pointing label" $ display card
-            card <- semUiDropdownNew cards [DOFSelection] $
+            card <- uiDropdown cards [DOFSelection] $
               def & dropdownConf_placeholder .~ "Card Type"
                   & setValue .~ (Just Visa <$ resetEvent)
                   & dropdownConf_initialValue ?~ Visa
@@ -83,7 +128,7 @@ main = mainWidget $ divClass "ui container" $ do
         rec el "label" $ do
               text "Single value, search"
               divClass "ui left pointing label" $ display contact
-            contact <- semUiDropdownNew contacts [DOFSearch, DOFSelection] $
+            contact <- uiDropdown contacts [DOFSearch, DOFSelection] $
               def & dropdownConf_placeholder .~ "Saved Contacts"
                   & setValue .~ (Nothing <$ resetEvent)
         return ()
@@ -92,7 +137,7 @@ main = mainWidget $ divClass "ui container" $ do
       rec el "label" $ do
             text "Multi value"
             divClass "ui left pointing label" $ display card
-          card <- semUiDropdownMultiNew cards [DOFSelection] $
+          card <- uiDropdownMulti cards [DOFSelection] $
             def & dropdownConf_placeholder .~ "Card Type"
                 & setValue .~ (mempty <$ resetEvent)
       return ()
@@ -101,7 +146,7 @@ main = mainWidget $ divClass "ui container" $ do
       rec el "label" $ do
             text "Multi value, full-text search"
             divClass "ui left pointing label" $ display contact
-          contact <- semUiDropdownMultiNew contacts [DOFSearch, DOFSelection] $
+          contact <- uiDropdownMulti contacts [DOFSearch, DOFSelection] $
             def & dropdownConf_placeholder .~ "Saved Contacts"
                 & setValue .~ ([Matt, Elliot] <$ resetEvent)
                 & dropdownConf_initialValue .~ [Matt, Elliot]
@@ -113,7 +158,7 @@ main = mainWidget $ divClass "ui container" $ do
         rec el "label" $ do
               text "Multi value, limited"
               divClass "ui left pointing label" $ display state
-            state <- semUiDropdownMultiNew states [DOFSelection] $
+            state <- uiDropdownMulti states [DOFSelection] $
               def & dropdownConf_placeholder .~ "States"
                   & setValue .~ (mempty <$ resetEvent)
                   & dropdownConf_maxSelections ?~ 3
@@ -122,11 +167,16 @@ main = mainWidget $ divClass "ui container" $ do
         rec el "label" $ do
               text "Multi value, search, hidden labels"
               divClass "ui left pointing label" $ display country
-            country <- semUiDropdownMultiNew countries [DOFSearch, DOFSelection] $
+            country <- uiDropdownMulti countries [DOFSearch, DOFSelection] $
               def & dropdownConf_placeholder .~ "Country"
                   & setValue .~ (mempty <$ resetEvent)
                   & dropdownConf_useLabels .~ False
         return ()
+
+main :: IO ()
+main = mainWidget $ divClass "ui container" $ do
+  checkboxes
+  dropdowns
 
 -- This causes startup time to go to ~5 seconds
 --    divClass "field" $ do

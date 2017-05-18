@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds          #-}
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE DeriveFunctor            #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -12,7 +13,6 @@
 {-# LANGUAGE TypeFamilies             #-}
 {-# LANGUAGE UndecidableInstances     #-}
 {-# LANGUAGE TemplateHaskell          #-}
-{-# LANGUAGE DeriveFunctor          #-}
 
 module Reflex.Dom.SemanticUI.Dropdown where
 
@@ -376,13 +376,13 @@ indexToItem items i' = do
 (_:xs) !? n = xs !? (n - 1)
 
 -- | Semantic-UI dropdown with static items
-semUiDropdownNew
+uiDropdown
   :: (MonadWidget t m, Eq a)
   => [(a, DropdownItemConfig m)]  -- ^ Items
   -> [DropdownOptFlag]            -- ^ Options
   -> DropdownConf t (Maybe a)     -- ^ Dropdown config
   -> m (Dynamic t (Maybe a))
-semUiDropdownNew items options config = do
+uiDropdown items options config = do
   (divEl, evt) <- dropdownInternal items options False (void config)
   let getIndex v = L.findIndex ((==) v . fst) items
       setDropdown = dropdownSetExactly (_element_raw divEl)
@@ -400,13 +400,13 @@ semUiDropdownNew items options config = do
   holdDyn Nothing $ indexToItem items <$> evt
 
 -- | Semantic-UI dropdown with multiple static items
-semUiDropdownMultiNew
+uiDropdownMulti
   :: (MonadWidget t m, Eq a)
   => [(a, DropdownItemConfig m)]  -- ^ Items
   -> [DropdownOptFlag]            -- ^ Options
   -> DropdownConf t [a]           -- ^ Dropdown config
   -> m (Dynamic t [a])
-semUiDropdownMultiNew items options config = do
+uiDropdownMulti items options config = do
   (divEl, evt) <- dropdownInternal items options True (void config)
 
   let getIndices vs = L.findIndices ((`elem` vs) . fst) items
