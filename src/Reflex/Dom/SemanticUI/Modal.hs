@@ -23,7 +23,7 @@ import           Control.Monad (void)
 import           Control.Lens.Operators ((^.))
 import           Language.Javascript.JSaddle.Object (js1, jsg1)
 #endif
-import           Reflex.Dom
+import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 
 
