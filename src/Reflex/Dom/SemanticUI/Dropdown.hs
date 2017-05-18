@@ -12,6 +12,7 @@
 {-# LANGUAGE TypeFamilies             #-}
 {-# LANGUAGE UndecidableInstances     #-}
 {-# LANGUAGE TemplateHaskell          #-}
+{-# LANGUAGE DeriveFunctor          #-}
 
 module Reflex.Dom.SemanticUI.Dropdown where
 
@@ -328,7 +329,7 @@ data DropdownConf t a = DropdownConf
   , _dropdownConf_maxSelections :: Maybe Int
   , _dropdownConf_useLabels :: Bool
   , _dropdownConf_fullTextSearch :: Bool
-  }
+  } deriving Functor
 
 $(makeLenses ''DropdownConf)
 
@@ -382,11 +383,7 @@ semUiDropdownNew
   -> DropdownConf t (Maybe a)     -- ^ Dropdown config
   -> m (Dynamic t (Maybe a))
 semUiDropdownNew items options config = do
-  (divEl, evt) <- dropdownInternal items options Single
-    (_dropdownConf_useLabels config)
-    (_dropdownConf_fullTextSearch config)
-    (_dropdownConf_placeholder config)
-    (_dropdownConf_attributes config)
+  (divEl, evt) <- dropdownInternal items options False (void config)
   let getIndex v = L.findIndex ((==) v . fst) items
       setDropdown = dropdownSetExactly (_element_raw divEl)
 
@@ -410,12 +407,7 @@ semUiDropdownMultiNew
   -> DropdownConf t [a]           -- ^ Dropdown config
   -> m (Dynamic t [a])
 semUiDropdownMultiNew items options config = do
-  (divEl, evt) <- dropdownInternal items options
-    (Multi $ _dropdownConf_maxSelections config)
-    (_dropdownConf_useLabels config)
-    (_dropdownConf_fullTextSearch config)
-    (_dropdownConf_placeholder config)
-    (_dropdownConf_attributes config)
+  (divEl, evt) <- dropdownInternal items options True (void config)
 
   let getIndices vs = L.findIndices ((`elem` vs) . fst) items
       setDropdown = dropdownSetExactly (_element_raw divEl)
@@ -432,30 +424,25 @@ semUiDropdownMultiNew items options config = do
 
   holdDyn [] $ catMaybes . map (indexToItem items) . T.splitOn "," <$> evt
 
-data DropdownType = Single | Multi (Maybe Int)
-isMulti :: DropdownType -> Bool
-isMulti Single = False
-isMulti (Multi _) = True
-
-toMaxSel :: DropdownType -> Maybe Int
-toMaxSel Single = Nothing
-toMaxSel (Multi m) = m
-
 -- | Internal function with shared behaviour
 dropdownInternal
   :: (MonadWidget t m, Eq a)
   => [(a, DropdownItemConfig m)]  -- ^ Items
   -> [DropdownOptFlag]            -- ^ Options
-  -> DropdownType                 -- ^ Maximum number of selections
-  -> Bool                         -- ^ UseLabels option
-  -> Bool                         -- ^ Full-text search
-  -> Text                         -- ^ Placeholder
-  -> Map Text Text                -- ^ Dropdown div attributes
+  -> Bool                         -- ^ Is multiple dropdown
+  -> DropdownConf t ()            -- ^ Dropdown config
   -> m (El t, Event t Text)
-dropdownInternal items options dtype useLabels fullText placeholder attrs = do
+dropdownInternal items options isMulti config = do
 
-  let multiClass = if isMulti dtype then " multiple" else ""
+  let useLabels = _dropdownConf_useLabels config
+      fullText = _dropdownConf_fullTextSearch config
+      placeholder = _dropdownConf_placeholder config
+      attrs = _dropdownConf_attributes config
+      maxSel = if isMulti then _dropdownConf_maxSelections config
+                          else Nothing
+      multiClass = if isMulti then " multiple" else ""
       classes = dropdownClass options <> multiClass
+
   (divEl, _) <- elAttr' "div" ("class" =: classes <> attrs) $ do
 
     -- This holds the placeholder. Initial value must be set by js function in
@@ -476,7 +463,7 @@ dropdownInternal items options dtype useLabels fullText placeholder attrs = do
 
   -- Activate the dropdown after element is built
   schedulePostBuild $ liftJSM $
-    activateDropdown (_element_raw divEl) (toMaxSel dtype) useLabels fullText $
+    activateDropdown (_element_raw divEl) maxSel useLabels fullText $
       liftIO . onChangeCallback
 
   return (divEl, onChangeEvent)
