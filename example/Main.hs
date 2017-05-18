@@ -54,12 +54,11 @@ renderCard card = do
 
 main :: IO ()
 main = mainWidget $ divClass "ui container" $ do
-  (resetDropdowns, _) <- divClass "ui top attached segment" $ do
+  resetEvent <- divClass "ui top attached segment" $ do
     elClass "h4" "ui header" $ do
       text "Dropdowns"
-      elAttr' "a" ("class" =: "ui horizontal blue label") $ text "Reset"
+      uiButton (rightFloated . mini . compact . basic <$> def) $ text "Reset"
 
-  let resetEvent = domEvent Click resetDropdowns
   divClass "ui bottom attached segment form" $ do
     let makeContact x = (x, DropdownItemConfig (tshow x) $ renderContact x)
         contacts = map makeContact [minBound..maxBound]

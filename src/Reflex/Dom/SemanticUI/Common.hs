@@ -379,3 +379,20 @@ class UiHasTransparent a where
   transparent :: a -> a
 
 
+------------------------------------------------------------------------------
+data UiFloated
+  = UiLeftFloated
+  | UiRightFloated
+  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance UiClassText UiFloated where
+  uiText UiLeftFloated = "left floated"
+  uiText UiRightFloated = "right floated"
+
+class UiHasFloated a where
+  uiSetFloated :: UiFloated -> a -> a
+
+leftFloated, rightFloated :: UiHasFloated a => a -> a
+leftFloated = uiSetFloated UiLeftFloated
+rightFloated = uiSetFloated UiRightFloated
+
