@@ -40,7 +40,7 @@ import Control.Lens.Operators ((^.))
 #endif
 import           Reflex
 --import           Reflex.Host.Class
-import           Reflex.Dom hiding (fromJSString)
+import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.SemanticUI.Common (tshow)
 ------------------------------------------------------------------------------
