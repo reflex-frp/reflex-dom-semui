@@ -45,14 +45,14 @@ library
     , lens
     , mtl
     , reflex     >= 0.5 && < 0.6
-    , reflex-dom >= 0.4 && < 0.5
+    , reflex-dom-core >= 0.4 && < 0.5
     , text
 
   if impl(ghcjs)
     build-depends: ghcjs-base
   else
     build-depends:
-        jsaddle >= 0.8.0.0 && < 0.9
+        jsaddle >= 0.8.0.0 && < 0.10
       , lens
 
   ghc-options: -Wall -fno-warn-unused-do-bind -fno-warn-orphans

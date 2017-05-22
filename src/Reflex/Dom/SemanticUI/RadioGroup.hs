@@ -33,7 +33,7 @@ import Language.Javascript.JSaddle.Object (fun, js0, js1, js2, jsg1)
 import Control.Lens.Operators ((^.))
 #endif
 import           Reflex
-import           Reflex.Dom hiding (fromJSString)
+import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.SemanticUI.Checkbox
 import           Reflex.Dom.SemanticUI.Common

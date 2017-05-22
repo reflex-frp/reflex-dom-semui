@@ -20,7 +20,7 @@ import           Data.Maybe
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
-import           Reflex.Dom hiding (fromJSString)
+import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.SemanticUI.Common
 import           Reflex.Dom.SemanticUI.Icon

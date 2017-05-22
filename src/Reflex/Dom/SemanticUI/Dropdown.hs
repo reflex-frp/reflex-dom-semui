@@ -29,6 +29,7 @@ import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified GHCJS.DOM.Element as DOM
+import           Text.Read (readMaybe)
 #ifdef ghcjs_HOST_OS
 import GHCJS.DOM.Types
        (liftJSM, JSString, JSVal, toJSString, fromJSString, pFromJSVal,
@@ -42,8 +43,8 @@ import Language.Javascript.JSaddle.Object
 import Control.Lens.Operators ((^.))
 #endif
 import           Reflex
-import           Reflex.Dom hiding (fromJSString)
-import           Text.Read (readMaybe)
+--import           Reflex.Host.Class
+import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.SemanticUI.Common
 ------------------------------------------------------------------------------

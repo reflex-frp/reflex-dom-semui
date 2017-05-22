@@ -26,7 +26,7 @@ import Control.Lens.Operators ((^.))
 import Control.Monad (void)
 #endif
 import           Reflex
-import           Reflex.Dom hiding (fromJSString)
+import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------
 import           Reflex.Dom.SemanticUI.Common (UiClassText(..))
 ------------------------------------------------------------------------------
