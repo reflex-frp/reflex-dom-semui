@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds          #-}
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE DeriveFunctor            #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -11,38 +12,41 @@
 {-# LANGUAGE ScopedTypeVariables      #-}
 {-# LANGUAGE TypeFamilies             #-}
 {-# LANGUAGE UndecidableInstances     #-}
+{-# LANGUAGE TemplateHaskell          #-}
 
 module Reflex.Dom.SemanticUI.Dropdown where
 
 ------------------------------------------------------------------------------
---import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Trans
---import           Data.Dependent.Sum (DSum (..))
+import           Control.Lens (makeLenses)
+import           Data.Default
 import qualified Data.List as L
 import           Data.Map (Map)
 import qualified Data.Map as M
+import           Data.Maybe (catMaybes, maybeToList)
 import           Data.Monoid
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified GHCJS.DOM.Element as DOM
+import           Text.Read (readMaybe)
 #ifdef ghcjs_HOST_OS
 import GHCJS.DOM.Types
        (liftJSM, JSString, JSVal, toJSString, fromJSString, pFromJSVal,
-        JSM, fromJSValUnchecked)
-import GHCJS.Foreign.Callback (Callback, asyncCallback3)
+        pToJSVal, toJSVal, JSM, fromJSValUnchecked)
+import GHCJS.Foreign.Callback (Callback, asyncCallback1, asyncCallback3)
 #else
 import GHCJS.DOM.Types
        (liftJSM, JSString, toJSString, JSM, fromJSValUnchecked)
 import Language.Javascript.JSaddle.Object
-       (fun, js1, jsg1, jss, obj)
+       (fun, js1, js2, jsg1, jss, obj)
 import Control.Lens.Operators ((^.))
 #endif
 import           Reflex
 --import           Reflex.Host.Class
 import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------
-import           Reflex.Dom.SemanticUI.Common (tshow)
+import           Reflex.Dom.SemanticUI.Common
 ------------------------------------------------------------------------------
 
 
@@ -101,23 +105,6 @@ activateSemUiDropdownMulti dmc = do
     e <- performEventAsync (act <$ pb)
     val <- holdDyn (_dmc_initialValue dmc) e
     return $! DropdownMulti val
-    -- I think the above is the new reflex implementation of the below, but
-    -- haven't tested it yet.
-
-    --postGui <- askPostGui
-    --runWithActions <- askRunWithActions
-    --e <- newEventWithTrigger $ \et -> do
-    --       cb <- asyncCallback3 $ \_ t _ -> liftIO $ do
-    --           let v = read $ fromJSString $ pFromJSVal t
-    --           postGui $ runWithActions [et :=> Identity v]
-    --       js_activateSemUiDropdownMulti
-    --         (toJSString $ _dmc_elementId dmc) cb
-    --         (toJSBool $ _dmc_fullTextSearch dmc)
-    --       return (return ())
-    --       -- TODO Probably need some kind of unsubscribe mechanism
-    --       --return $ liftIO unsubscribe
-    --val <- holdDyn (_dmc_initialValue dmc) e
-    --return $! DropdownMulti val
 
 #ifdef ghcjs_HOST_OS
 activateSemUiDropdownMulti' :: JSString -> (String -> JSM ()) -> Bool -> JSM ()
@@ -147,7 +134,6 @@ activateSemUiDropdownMulti' name onChange full = do
 --
 -- $('#dropdownId').dropdown('get value')
 -- $('#dropdownId').onChange(value, text, $choice)
-
 
 -- | Wrapper around the reflex-dom dropdown that calls the sem-ui dropdown
 -- function after the element is built.
@@ -228,7 +214,7 @@ data DropdownItemConfig m = DropdownItemConfig
     -- ^ dataText (shown for the selected item)
   , dropdownItemConfig_internal :: m ()
     -- ^ Procedure for drawing the DOM contents of the menu item
-    --   (we produce the menu item div for you, so it' enough to
+    --   (we produce the menu item div for you, so it's enough to
     --    use something simple here, e.g. `text "Friends"`
   }
 
@@ -283,3 +269,198 @@ semUiDropdownWithItems elId opts iv vals attrs = do
   pb <- getPostBuild
   performEvent_ (liftJSM (activateSemUiDropdownEl $ _element_raw elDD) <$ pb)
   holdDyn iv (elChoice)
+
+------------------------------------------------------------------------------
+-- New implementation
+
+-- | Given a div element, tell semantic-ui to convert it to a dropdown with the
+-- given options. The callback function is called on change with the currently
+-- selected value.
+activateDropdown :: DOM.Element -> Maybe Int -> Bool -> Bool
+                 -> (Text -> JSM ()) -> JSM ()
+#ifdef ghcjs_HOST_OS
+activateDropdown e mMaxSel useLabels fullText onChange = do
+  cb <- asyncCallback1 $ onChange . pFromJSVal
+  let maxSel = maybe (pToJSVal False) pToJSVal mMaxSel
+  js_activateDropdown e maxSel useLabels fullText cb
+foreign import javascript unsafe
+  "$($1).dropdown({ forceSelection : false \
+                  , maxSelections: $2 \
+                  , useLabels: $3 \
+                  , fullTextSearch: $4 \
+                  , onChange: function(value){ $5(value); } });"
+  js_activateDropdown :: DOM.Element -> JSVal -> Bool -> Bool
+                      -> Callback (JSVal -> JSM ()) -> JSM ()
+#else
+activateDropdown e maxSel useLabels fullText onChange = do
+  o <- obj
+  o ^. jss ("forceSelection"::Text) False
+  o ^. jss ("maxSelections"::Text) maxSel
+  o ^. jss ("useLabels"::Text) useLabels
+  o ^. jss ("fullTextSearch"::Text) fullText
+  o ^. jss ("onChange"::Text) (fun $ \_ _ [t, _, _] ->
+    onChange =<< fromJSValUnchecked t)
+  void $ jsg1 ("$"::Text) e ^. js1 ("dropdown"::Text) o
+#endif
+
+-- | Given a dropdown element, set the value to the given list. For single
+-- dropdowns just provide a singleton list.
+dropdownSetExactly :: DOM.Element -> [Int] -> JSM ()
+#ifdef ghcjs_HOST_OS
+dropdownSetExactly e is = do
+  jsVal <- toJSVal $ map tshow is
+  js_dropdownSetExactly e jsVal
+
+foreign import javascript unsafe
+  "$($1).dropdown('set exactly', $2);"
+  js_dropdownSetExactly :: DOM.Element -> JSVal -> JSM ()
+#else
+dropdownSetExactly e is =
+  void $ jsg1 ("$"::Text) e ^. js2 ("dropdown"::Text) ("set exactly"::Text) is
+#endif
+
+------------------------------------------------------------------------------
+
+-- | Config for new semantic dropdowns
+data DropdownConf t a = DropdownConf
+  { _dropdownConf_initialValue :: a
+  , _dropdownConf_setValue :: Event t a
+  , _dropdownConf_attributes :: Map Text Text
+  , _dropdownConf_placeholder :: Text
+  , _dropdownConf_maxSelections :: Maybe Int
+  , _dropdownConf_useLabels :: Bool
+  , _dropdownConf_fullTextSearch :: Bool
+  } deriving Functor
+
+$(makeLenses ''DropdownConf)
+
+instance (Reflex t) => Default (DropdownConf t (Maybe a)) where
+  def = DropdownConf
+    { _dropdownConf_initialValue = Nothing
+    , _dropdownConf_setValue = never
+    , _dropdownConf_attributes = mempty
+    , _dropdownConf_placeholder = mempty
+    , _dropdownConf_maxSelections = Nothing
+    , _dropdownConf_useLabels = True
+    , _dropdownConf_fullTextSearch = False
+    }
+
+instance (Reflex t) => Default (DropdownConf t [a]) where
+  def = DropdownConf
+    { _dropdownConf_initialValue = mempty
+    , _dropdownConf_setValue = never
+    , _dropdownConf_attributes = mempty
+    , _dropdownConf_placeholder = mempty
+    , _dropdownConf_maxSelections = Nothing
+    , _dropdownConf_useLabels = True
+    , _dropdownConf_fullTextSearch = False
+    }
+
+instance HasAttributes (DropdownConf t a) where
+  type Attrs (DropdownConf t a) = Map Text Text
+  attributes = dropdownConf_attributes
+
+instance HasSetValue (DropdownConf t a) where
+  type SetValue (DropdownConf t a) = Event t a
+  setValue = dropdownConf_setValue
+
+-- | Helper function
+indexToItem :: [(a, DropdownItemConfig m)] -> Text -> Maybe a
+indexToItem items i' = do
+  i <- readMaybe $ T.unpack i'
+  fst <$> items !? i
+
+-- | Semantic-UI dropdown with static items
+uiDropdown
+  :: (MonadWidget t m, Eq a)
+  => [(a, DropdownItemConfig m)]  -- ^ Items
+  -> [DropdownOptFlag]            -- ^ Options
+  -> DropdownConf t (Maybe a)     -- ^ Dropdown config
+  -> m (Dynamic t (Maybe a))
+uiDropdown items options config = do
+  (divEl, evt) <- dropdownInternal items options False (void config)
+  let getIndex v = L.findIndex ((==) v . fst) items
+      setDropdown = dropdownSetExactly (_element_raw divEl)
+
+  -- setValue events
+  performEvent_ $ liftJSM . setDropdown . maybeToList . (>>= getIndex)
+               <$> _dropdownConf_setValue config
+
+  -- Set initial value
+  pb <- getPostBuild
+  performEvent $
+    liftJSM (setDropdown $ maybeToList $ getIndex
+      =<< _dropdownConf_initialValue config) <$ pb
+
+  holdDyn Nothing $ indexToItem items <$> evt
+
+-- | Semantic-UI dropdown with multiple static items
+uiDropdownMulti
+  :: (MonadWidget t m, Eq a)
+  => [(a, DropdownItemConfig m)]  -- ^ Items
+  -> [DropdownOptFlag]            -- ^ Options
+  -> DropdownConf t [a]           -- ^ Dropdown config
+  -> m (Dynamic t [a])
+uiDropdownMulti items options config = do
+  (divEl, evt) <- dropdownInternal items options True (void config)
+
+  let getIndices vs = L.findIndices ((`elem` vs) . fst) items
+      setDropdown = dropdownSetExactly (_element_raw divEl)
+
+  -- setValue events
+  performEvent_ $ liftJSM . setDropdown . getIndices
+               <$> _dropdownConf_setValue config
+
+  -- Set initial value
+  pb <- getPostBuild
+  performEvent $
+    liftJSM (setDropdown . getIndices $
+      _dropdownConf_initialValue config) <$ pb
+
+  holdDyn [] $ catMaybes . map (indexToItem items) . T.splitOn "," <$> evt
+
+-- | Internal function with shared behaviour
+dropdownInternal
+  :: (MonadWidget t m, Eq a)
+  => [(a, DropdownItemConfig m)]  -- ^ Items
+  -> [DropdownOptFlag]            -- ^ Options
+  -> Bool                         -- ^ Is multiple dropdown
+  -> DropdownConf t ()            -- ^ Dropdown config
+  -> m (El t, Event t Text)
+dropdownInternal items options isMulti config = do
+
+  (divEl, _) <- elAttr' "div" ("class" =: classes <> attrs) $ do
+
+    -- This holds the placeholder. Initial value must be set by js function in
+    -- wrapper.
+    divClass "default text" $ text $ placeholder
+    elAttr "i" ("class" =: "dropdown icon") blank
+
+    -- Dropdown menu
+    divClass "menu" $ sequence_ $ imap putItem items
+
+  -- Setup the event and callback function for when the value is changed
+  (onChangeEvent, onChangeCallback) <- newTriggerEvent
+
+  -- Activate the dropdown after element is built
+  schedulePostBuild $ liftJSM $
+    activateDropdown (_element_raw divEl) maxSel useLabels fullText $
+      liftIO . onChangeCallback
+
+  return (divEl, onChangeEvent)
+
+  where
+    useLabels = _dropdownConf_useLabels config
+    fullText = _dropdownConf_fullTextSearch config
+    placeholder = _dropdownConf_placeholder config
+    attrs = _dropdownConf_attributes config
+    maxSel = if isMulti then _dropdownConf_maxSelections config
+                        else Nothing
+    multiClass = if isMulti then " multiple" else ""
+    classes = dropdownClass options <> multiClass
+    itemDiv i a = elAttr "div"
+      ("class" =: "item" <> "data-value" =: tshow i <> a)
+    putItem i (_, conf) = case conf of
+      DropdownItemConfig "" m -> itemDiv i mempty m
+      DropdownItemConfig t m -> itemDiv i ("data-text" =: t) m
+

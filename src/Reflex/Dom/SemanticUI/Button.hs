@@ -44,11 +44,12 @@ data UiButton = UiButton
     , _uiButton_toggle     :: Maybe UiToggle
     , _uiButton_fluid      :: Maybe UiFluid
     , _uiButton_circular   :: Maybe UiCircular
+    , _uiButton_floated   :: Maybe UiFloated
     , _uiButton_custom     :: Maybe Text
     } deriving (Eq,Show)
 
 instance Default UiButton where
-  def = UiButton def def def def def def def def def def def def
+  def = UiButton def def def def def def def def def def def def def
 
 instance UiHasColor UiButton where
   uiSetColor c b = b { _uiButton_color = Just c }
@@ -86,6 +87,9 @@ instance UiHasFluid UiButton where
 instance UiHasCircular UiButton where
   circular b = b { _uiButton_circular = Just UiCircular }
 
+instance UiHasFloated UiButton where
+  uiSetFloated f b = b { _uiButton_floated = Just f }
+
 instance UiHasCustom UiButton where
   custom s i = i { _uiButton_custom = addCustom s (_uiButton_custom i) }
 
@@ -105,6 +109,7 @@ uiButtonAttrs UiButton{..} = T.unwords $ catMaybes
     , uiText <$> _uiButton_toggle
     , uiText <$> _uiButton_fluid
     , uiText <$> _uiButton_circular
+    , uiText <$> _uiButton_floated
     , _uiButton_custom
     ]
 
