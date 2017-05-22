@@ -19,6 +19,23 @@ import Reflex.Dom.Internal () -- TODO remove this once we solve orphan instance 
 import StateEnum
 import CountryEnum
 
+-- | Throughput
+data Throughput = Unmetered | Metered Int deriving (Eq, Show)
+
+showThroughput :: Throughput -> Text
+showThroughput Unmetered = "Unmetered"
+showThroughput (Metered n) = T.pack (show n) <> " mbps max"
+
+-- | Frequency
+data Frequency = OnceWeek | TwiceWeek | OnceDay | TwiceDay
+  deriving (Eq, Show, Enum, Bounded)
+
+showFreq :: Frequency -> Text
+showFreq OnceWeek = "Once a week"
+showFreq TwiceWeek = "2-3 times a week"
+showFreq OnceDay = "Once a day"
+showFreq TwiceDay = "Twice a day"
+
 -- | Contacts
 data ContactEnum
   = Jenny | Elliot | Stevie | Christian | Matt | Justen
@@ -173,9 +190,44 @@ dropdowns = do
                   & dropdownConf_useLabels .~ False
         return ()
 
+radioGroups :: forall t m. MonadWidget t m => m ()
+radioGroups = do
+
+  resetEvent <- divClass "ui top attached segment" $ do
+    elClass "h4" "ui header" $ do
+      text "Radio Groups"
+      uiButton (rightFloated . mini . compact . basic <$> def) $ text "Reset"
+
+  divClass "ui bottom attached segment form" $ do
+    let makeFreq x = (x, def & setValue .~ constDyn (text $ showFreq x))
+        freqencies = map makeFreq [minBound..maxBound]
+        makeThru x = (x, def & setValue .~ constDyn (text $ showThroughput x))
+        throughputs = map makeThru [Metered 20, Metered 10, Metered 5, Unmetered]
+
+    divClass "field" $ do
+      rec el "label" $ do
+            text "Normal radio group"
+            divClass "ui left pointing label" $ display frequency
+          frequency <- divClass "inline fields" $ do
+            radioGroup "frequency" freqencies $
+              def & setValue .~ (Nothing <$ resetEvent)
+      return ()
+
+    divClass "field" $ do
+      rec el "label" $ do
+            text "Slider group"
+            divClass "ui left pointing label" $ display throughput
+          throughput <- divClass "grouped fields" $ do
+            radioGroup "throughput" throughputs $
+              def & radioGroupConfig_initialValue ?~ Unmetered
+                  & setValue .~ (Just Unmetered <$ resetEvent)
+                  & radioGroupConfig_type .~ [CbSlider]
+      return ()
+
 main :: IO ()
 main = mainWidget $ divClass "ui container" $ do
   checkboxes
+  radioGroups
   dropdowns
 
 -- This causes startup time to go to ~5 seconds
@@ -184,7 +236,7 @@ main = mainWidget $ divClass "ui container" $ do
 --            text "Country old"
 --            divClass "ui left pointing label" $ display country
 --          country <- semUiDropdownWithItems "country-dropdown"
---            [DOFSelection, DOFSearch] US (constDyn $ fromList countries) mempty
+--            [DOFSelection, DOFSearch] US (constDyn $ fromList freqencies) mempty
 --      return ()
 
 

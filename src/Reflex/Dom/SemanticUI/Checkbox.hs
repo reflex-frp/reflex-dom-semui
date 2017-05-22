@@ -1,18 +1,9 @@
-{-# LANGUAGE ConstraintKinds          #-}
 {-# LANGUAGE CPP                      #-}
-{-# LANGUAGE DeriveFunctor            #-}
-{-# LANGUAGE FlexibleContexts         #-}
-{-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE JavaScriptFFI            #-}
-{-# LANGUAGE MultiParamTypeClasses    #-}
 {-# LANGUAGE OverloadedStrings        #-}
-{-# LANGUAGE RecordWildCards          #-}
-{-# LANGUAGE RecursiveDo              #-}
-{-# LANGUAGE ScopedTypeVariables      #-}
-{-# LANGUAGE TypeFamilies             #-}
-{-# LANGUAGE UndecidableInstances     #-}
 {-# LANGUAGE TemplateHaskell          #-}
+{-# LANGUAGE TypeFamilies             #-}
 
 module Reflex.Dom.SemanticUI.Checkbox where
 
@@ -123,17 +114,19 @@ instance HasSetValue (CheckboxConf t) where
 --------------------------------------------------------------------------------
 
 -- | Semantic UI checkbox, returning reflex-dom 'Checkbox' contents
-uiCheckbox :: MonadWidget t m
-           => m ()            -- ^ Label contents
-           -> CheckboxConf t  -- ^ Checkbox config
-           -> m (Checkbox t)
+uiCheckbox
+  :: MonadWidget t m
+  => m ()           -- ^ Label contents
+  -> CheckboxConf t -- ^ Checkbox config
+  -> m (Checkbox t)
 uiCheckbox label config = fmap snd $ uiCheckbox' label config
 
 -- | Semantic UI checkbox, returning element and reflex-dom 'Checkbox' contents
-uiCheckbox' :: MonadWidget t m
-            => m ()            -- ^ Label contents
-            -> CheckboxConf t  -- ^ Checkbox config
-            -> m (El t, Checkbox t)
+uiCheckbox'
+  :: MonadWidget t m
+  => m ()           -- ^ Label contents
+  -> CheckboxConf t -- ^ Checkbox config
+  -> m (El t, Checkbox t)
 uiCheckbox' label config = do
 
   (cbEl, _) <- elAttr' "div" divAttrs $ do

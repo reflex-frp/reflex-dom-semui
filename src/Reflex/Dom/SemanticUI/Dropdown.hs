@@ -45,7 +45,7 @@ import           Reflex
 import           Reflex.Dom hiding (fromJSString)
 import           Text.Read (readMaybe)
 ------------------------------------------------------------------------------
-import           Reflex.Dom.SemanticUI.Common (tshow)
+import           Reflex.Dom.SemanticUI.Common
 ------------------------------------------------------------------------------
 
 
@@ -369,12 +369,6 @@ indexToItem items i' = do
   i <- readMaybe $ T.unpack i'
   fst <$> items !? i
 
--- | Safe indexing into lists
-(!?) :: [a] -> Int -> Maybe a
-[] !? _ = Nothing
-(x:_) !? 0 = Just x
-(_:xs) !? n = xs !? (n - 1)
-
 -- | Semantic-UI dropdown with static items
 uiDropdown
   :: (MonadWidget t m, Eq a)
@@ -434,15 +428,6 @@ dropdownInternal
   -> m (El t, Event t Text)
 dropdownInternal items options isMulti config = do
 
-  let useLabels = _dropdownConf_useLabels config
-      fullText = _dropdownConf_fullTextSearch config
-      placeholder = _dropdownConf_placeholder config
-      attrs = _dropdownConf_attributes config
-      maxSel = if isMulti then _dropdownConf_maxSelections config
-                          else Nothing
-      multiClass = if isMulti then " multiple" else ""
-      classes = dropdownClass options <> multiClass
-
   (divEl, _) <- elAttr' "div" ("class" =: classes <> attrs) $ do
 
     -- This holds the placeholder. Initial value must be set by js function in
@@ -451,12 +436,7 @@ dropdownInternal items options isMulti config = do
     elAttr "i" ("class" =: "dropdown icon") blank
 
     -- Dropdown menu
-    let itemDiv n a = elAttr "div"
-          ("class" =: "item" <> "data-value" =: tshow n <> a)
-        putItem n (_, conf) = n + 1 <$ case conf of
-          DropdownItemConfig "" m -> itemDiv n mempty m
-          DropdownItemConfig t m -> itemDiv n ("data-text" =: t) m
-    divClass "menu" $ foldM_ putItem (0 :: Int) items
+    divClass "menu" $ sequence_ $ imap putItem items
 
   -- Setup the event and callback function for when the value is changed
   (onChangeEvent, onChangeCallback) <- newTriggerEvent
@@ -467,4 +447,19 @@ dropdownInternal items options isMulti config = do
       liftIO . onChangeCallback
 
   return (divEl, onChangeEvent)
+
+  where
+    useLabels = _dropdownConf_useLabels config
+    fullText = _dropdownConf_fullTextSearch config
+    placeholder = _dropdownConf_placeholder config
+    attrs = _dropdownConf_attributes config
+    maxSel = if isMulti then _dropdownConf_maxSelections config
+                        else Nothing
+    multiClass = if isMulti then " multiple" else ""
+    classes = dropdownClass options <> multiClass
+    itemDiv i a = elAttr "div"
+      ("class" =: "item" <> "data-value" =: tshow i <> a)
+    putItem i (_, conf) = case conf of
+      DropdownItemConfig "" m -> itemDiv i mempty m
+      DropdownItemConfig t m -> itemDiv i ("data-text" =: t) m
 

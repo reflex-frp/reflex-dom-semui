@@ -25,6 +25,19 @@ import           Reflex.Dom
 tshow :: Show a => a -> Text
 tshow = T.pack . show
 
+-- | Map with index
+imap :: (Int -> a -> b) -> [a] -> [b]
+imap f = go 0
+  where
+    go _ [] = []
+    go i (x:xs) = f i x : go (succ i) xs
+
+-- | Safe indexing into lists
+(!?) :: [a] -> Int -> Maybe a
+[] !? _ = Nothing
+(x:_) !? 0 = Just x
+(_:xs) !? n = xs !? (n - 1)
+
 ------------------------------------------------------------------------------
 -- | A type class for converting data types into appropriate  Semantic UI
 -- class text.
