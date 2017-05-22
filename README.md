@@ -16,3 +16,12 @@ Then you can build with:
     cabal configure --ghcjs
     cabal build
 
+---
+
+A compiled version of the code in the `example` folder is available in `docs/index.html` or online at https://reflex-frp.github.io/reflex-dom-semui/.
+
+To rebuild the example app and update the `docs` folder, just run
+
+    cabal configure --ghcjs --enable-tests
+    cabal build example && makedocs.sh
+
