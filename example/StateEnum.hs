@@ -6,7 +6,7 @@ import Prelude hiding (GT, LT)
 
 import Data.Text (Text)
 import qualified Data.Text as T
-import Reflex.Dom
+import Reflex.Dom.Core
 
 data StateEnum
   = AL | AK | AZ | AR | CA | CO | CT | DE | DC | FL | GA | HI | ID | IL | IN

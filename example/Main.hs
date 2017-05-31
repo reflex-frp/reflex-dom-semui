@@ -12,9 +12,8 @@ import Data.Map (Map, fromList)
 import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
-import Reflex.Dom
+import Reflex.Dom.Core
 import Reflex.Dom.SemanticUI
-import Reflex.Dom.Internal () -- TODO remove this once we solve orphan instance issue
 
 import StateEnum
 import CountryEnum
@@ -88,9 +87,10 @@ checkboxes = do
             def & setValue .~ (False <$ resetEvent)
           divClass "ui left pointing label" $ display $ value c1
         divClass "ui compact segment" $ do
-          c2 <- uiCheckbox (text "Toggle checkbox") $
+          c2 <- uiCheckbox (text "Toggle checkbox (checked by default)") $
             def & checkboxConf_type .~ [CbToggle]
-                & setValue .~ (False <$ resetEvent)
+                & setValue .~ (True <$ resetEvent)
+                & checkboxConf_initialValue .~ True
           divClass "ui left pointing label" $ display $ value c2
         divClass "ui compact segment" $ do
           c3 <- uiCheckbox (text "Slider checkbox") $

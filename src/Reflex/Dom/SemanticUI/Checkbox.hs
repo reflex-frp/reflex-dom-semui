@@ -135,13 +135,14 @@ uiCheckbox' label config = do
 
   -- Setup the event and callback function for when the value is changed
   (onChangeEvent, onChangeCallback) <- newTriggerEvent
+  let setCbVal = setCheckboxValue (_element_raw cbEl)
 
-  -- Activate the dropdown after build
-  schedulePostBuild $ liftJSM $
+  -- Activate the dropdown after build and set initial value
+  schedulePostBuild $ liftJSM $ do
     activateCheckbox (_element_raw cbEl) $ liftIO . onChangeCallback
+    setCbVal $ _checkboxConf_initialValue config
 
   -- Allow the value to be set
-  let setCbVal = setCheckboxValue (_element_raw cbEl)
   performEvent_ $ liftJSM . setCbVal <$> _checkboxConf_setValue config
 
   cb <- holdDyn (M.member "checked" attrs) onChangeEvent

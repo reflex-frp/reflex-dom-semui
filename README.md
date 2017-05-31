@@ -23,5 +23,5 @@ A compiled version of the code in the `example` folder is available in `docs/ind
 To rebuild the example app and update the `docs` folder, just run
 
     cabal configure --ghcjs --enable-tests
-    cabal build example && makedocs.sh
+    cabal build example && ./makedocs.sh
 
