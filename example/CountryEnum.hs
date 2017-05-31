@@ -6,7 +6,7 @@ import Data.Monoid ((<>))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Prelude hiding (GT, LT)
-import Reflex.Dom
+import Reflex.Dom.Core
 
 flag :: MonadWidget t m => Text -> m ()
 flag flagType = elClass "i" (flagType <> " flag") blank
