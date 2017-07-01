@@ -1,5 +1,5 @@
-{-# LANGUAGE ConstraintKinds          #-}
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE ConstraintKinds          #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -15,15 +15,14 @@
 module Reflex.Dom.SemanticUI.Modal where
 
 ------------------------------------------------------------------------------
-import           Control.Monad.Trans
-import           Data.Text (Text)
+import           Data.Text       (Text)
 import qualified GHCJS.DOM.Types as DOM
 #ifndef ghcjs_HOST_OS
-import           Control.Monad (void)
-import           Control.Lens.Operators ((^.))
-import           Language.Javascript.JSaddle.Object (js1, jsg1)
+import Control.Lens.Operators             ((^.))
+import Control.Monad                      (void)
+import Language.Javascript.JSaddle.Object (js1, jsg1)
 #endif
-import           Reflex.Dom.Core
+import Reflex.Dom.Core
 ------------------------------------------------------------------------------
 
 
@@ -61,16 +60,16 @@ data ModalBehavior
 modalBehaviorString :: ModalBehavior -> Text
 modalBehaviorString beh =
     case beh of
-      ShowModal -> "show"
-      HideModal -> "hide"
-      ToggleModal -> "toggle"
+      ShowModal    -> "show"
+      HideModal    -> "hide"
+      ToggleModal  -> "toggle"
       RefreshModal -> "refresh"
-      ShowDimmer -> "show dimmer"
-      HideDimmer -> "hide dimmer"
-      HideOthers -> "hide others"
-      HideAll -> "hide all"
-      CacheSizes -> "cache sizes"
-      SetActive -> "set active"
+      ShowDimmer   -> "show dimmer"
+      HideDimmer   -> "hide dimmer"
+      HideOthers   -> "hide others"
+      HideAll      -> "hide all"
+      CacheSizes   -> "cache sizes"
+      SetActive    -> "set active"
 
 ------------------------------------------------------------------------------
 uiModal :: MonadWidget t m => Event t ModalBehavior -> m a -> m a
