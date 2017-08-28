@@ -19,7 +19,7 @@ module Reflex.Dom.SemanticUI.Dropdown where
 ------------------------------------------------------------------------------
 import           Control.Monad
 import           Control.Monad.Trans
-import           Control.Lens (makeLenses)
+import           Control.Lens (makeLenses, (?~))
 import           Data.Default
 import qualified Data.List as L
 import           Data.Map (Map)
@@ -46,6 +46,7 @@ import           Reflex
 --import           Reflex.Host.Class
 import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------
+import           Reflex.Dom.SemanticUI.Button
 import           Reflex.Dom.SemanticUI.Common
 ------------------------------------------------------------------------------
 
@@ -218,21 +219,52 @@ data DropdownItemConfig m = DropdownItemConfig
     --    use something simple here, e.g. `text "Friends"`
   }
 
--- | Dropdowns make have these additional properties
+-- TODO: possibly move to Common if useful anywhere outside dropdown
+-- | Position the menu is pointing at when pointing is enabled
+data UiPointingPosition
+  = UiTopPointing
+  | UiBottomPointing
+  | UiLeftPointing
+  | UiRightPointing
+  | UiTopLeftPointing
+  | UiTopRightPointing
+  | UiBottomLeftPointing
+  | UiBottomRightPointing
+  deriving (Eq, Ord, Show, Enum, Bounded)
+
+instance UiClassText UiPointingPosition where
+  uiText UiTopPointing = "top"
+  uiText UiBottomPointing = "bottom"
+  uiText UiLeftPointing = "left"
+  uiText UiRightPointing = "right"
+  uiText UiTopLeftPointing = "top left"
+  uiText UiTopRightPointing = "top right"
+  uiText UiBottomLeftPointing = "bottom left"
+  uiText UiBottomRightPointing = "bottom right"
+
+-- | Dropdowns may have these additional properties
 data DropdownOptFlag =
     DOFFluid
-     -- ^ More flexible dropdown width, won't line break items
+    -- ^ More flexible dropdown width, won't line break items
+  | DOFCompact
+    -- ^ A compact dropdown has no minimum width
   | DOFSearch
-    -- ^ Make menu items are searchable
+    -- ^ Make menu items searchable
   | DOFSelection
     -- ^ Dropdown is a selection among alternatives
-  deriving (Eq, Enum, Show)
+  | DOFFloating
+    -- ^ A dropdown menu can appear to be floating below an element
+  | DOFPointing UiPointingPosition
+    -- ^ A dropdown can be formatted so that its menu is pointing
+  deriving (Eq, Show)
+
+instance UiClassText DropdownOptFlag where
+  uiText (DOFPointing p) = T.unwords [uiText p, "pointing"]
+  uiText x = T.toLower $ T.drop 3 $ tshow x
 
 -- Helper function to build class attribute for dropdown
 dropdownClass :: [DropdownOptFlag] -> T.Text
-dropdownClass opts = T.unwords $ "ui" : (flags ++ ["dropdown"])
-  where flags = map (T.toLower . T.drop 3 . tshow) $ L.sortOn fromEnum opts
-
+dropdownClass opts = T.unwords ["ui", uiText opts, "dropdown"]
 
 
 -- | Dropdown with customizable menu items
@@ -276,24 +308,26 @@ semUiDropdownWithItems elId opts iv vals attrs = do
 -- | Given a div element, tell semantic-ui to convert it to a dropdown with the
 -- given options. The callback function is called on change with the currently
 -- selected value.
-activateDropdown :: DOM.Element -> Maybe Int -> Bool -> Bool
+activateDropdown :: DOM.Element -> Text -> Maybe Int -> Bool -> Bool
                  -> (Text -> JSM ()) -> JSM ()
 #ifdef ghcjs_HOST_OS
-activateDropdown e mMaxSel useLabels fullText onChange = do
+activateDropdown e action mMaxSel useLabels fullText onChange = do
   cb <- asyncCallback1 $ onChange . pFromJSVal
   let maxSel = maybe (pToJSVal False) pToJSVal mMaxSel
-  js_activateDropdown e maxSel useLabels fullText cb
+  js_activateDropdown e (toJSString action) maxSel useLabels fullText cb
 foreign import javascript unsafe
-  "$($1).dropdown({ forceSelection : false \
-                  , maxSelections: $2 \
-                  , useLabels: $3 \
-                  , fullTextSearch: $4 \
-                  , onChange: function(value){ $5(value); } });"
-  js_activateDropdown :: DOM.Element -> JSVal -> Bool -> Bool
+  "$($1).dropdown({ action: $2 \
+                  , forceSelection: false \
+                  , maxSelections: $3 \
+                  , useLabels: $4 \
+                  , fullTextSearch: $5 \
+                  , onChange: function(value){ $6(value); } });"
+  js_activateDropdown :: DOM.Element -> JSString -> JSVal -> Bool -> Bool
                       -> Callback (JSVal -> JSM ()) -> JSM ()
 #else
-activateDropdown e maxSel useLabels fullText onChange = do
+activateDropdown e action maxSel useLabels fullText onChange = do
   o <- obj
+  o ^. jss ("action"::Text) action
   o ^. jss ("forceSelection"::Text) False
   o ^. jss ("maxSelections"::Text) maxSel
   o ^. jss ("useLabels"::Text) useLabels
@@ -321,6 +355,21 @@ dropdownSetExactly e is =
 
 ------------------------------------------------------------------------------
 
+-- | Default action to occur
+data DropdownAction
+  = DAActivate
+  | DASelect
+  | DACombo
+  | DANothing
+  | DAHide
+  deriving (Eq, Ord, Show)
+
+instance Default DropdownAction where
+  def = DAActivate
+
+dropdownAction :: DropdownAction -> T.Text
+dropdownAction = T.toLower . T.drop 2 . tshow
+
 -- | Config for new semantic dropdowns
 data DropdownConf t a = DropdownConf
   { _dropdownConf_initialValue :: a
@@ -330,6 +379,9 @@ data DropdownConf t a = DropdownConf
   , _dropdownConf_maxSelections :: Maybe Int
   , _dropdownConf_useLabels :: Bool
   , _dropdownConf_fullTextSearch :: Bool
+  , _dropdownConf_action :: DropdownAction
+  , _dropdownConf_icon :: Text
+  , _dropdownConf_button :: Maybe UiButton
   } deriving Functor
 
 $(makeLenses ''DropdownConf)
@@ -343,6 +395,9 @@ instance (Reflex t) => Default (DropdownConf t (Maybe a)) where
     , _dropdownConf_maxSelections = Nothing
     , _dropdownConf_useLabels = True
     , _dropdownConf_fullTextSearch = False
+    , _dropdownConf_action = def
+    , _dropdownConf_icon = "dropdown"
+    , _dropdownConf_button = Nothing
     }
 
 instance (Reflex t) => Default (DropdownConf t [a]) where
@@ -354,6 +409,9 @@ instance (Reflex t) => Default (DropdownConf t [a]) where
     , _dropdownConf_maxSelections = Nothing
     , _dropdownConf_useLabels = True
     , _dropdownConf_fullTextSearch = False
+    , _dropdownConf_action = def
+    , _dropdownConf_icon = "dropdown"
+    , _dropdownConf_button = Nothing
     }
 
 instance HasAttributes (DropdownConf t a) where
@@ -377,7 +435,18 @@ uiDropdown
   -> [DropdownOptFlag]            -- ^ Options
   -> DropdownConf t (Maybe a)     -- ^ Dropdown config
   -> m (Dynamic t (Maybe a))
-uiDropdown items options config = do
+uiDropdown items options config =
+  fmap snd $ uiDropdown' items options config
+
+-- | More general form of uiDropdown. Allows styling as a button and
+-- gives direct access to update Event so you don't have to through
+-- the Dynamic when using dropdown just as a menu.
+uiDropdown' :: (MonadWidget t m, Eq a)
+  => [(a, DropdownItemConfig m)]  -- ^ Items
+  -> [DropdownOptFlag]            -- ^ Options
+  -> DropdownConf t (Maybe a)     -- ^ Dropdown config
+  -> m (Event t (Maybe a), Dynamic t (Maybe a))
+uiDropdown' items options config = do
   (divEl, evt) <- dropdownInternal items options False (void config)
   let getIndex v = L.findIndex ((==) v . fst) items
       setDropdown = dropdownSetExactly (_element_raw divEl)
@@ -387,12 +456,13 @@ uiDropdown items options config = do
                <$> _dropdownConf_setValue config
 
   -- Set initial value
-  pb <- getPostBuild
-  performEvent $
-    liftJSM (setDropdown $ maybeToList $ getIndex
-      =<< _dropdownConf_initialValue config) <$ pb
+  forM_ (_dropdownConf_initialValue config) $ \v -> do
+    pb <- delay 0 =<< getPostBuild
+    performEvent $ liftJSM (setDropdown $ maybeToList $ getIndex v) <$ pb
 
-  holdDyn Nothing $ indexToItem items <$> evt
+  let itemE = indexToItem items <$> evt
+  itemDyn <- holdDyn Nothing itemE
+  return (itemE, itemDyn)
 
 -- | Semantic-UI dropdown with multiple static items
 uiDropdownMulti
@@ -419,6 +489,24 @@ uiDropdownMulti items options config = do
 
   holdDyn [] $ catMaybes . map (indexToItem items) . T.splitOn "," <$> evt
 
+-- | Semantic-UI combo dropdown
+uiDropdownCombo :: (MonadWidget t m, Eq a)
+  => UiButton                     -- ^ Buttons attributes
+  -> [(a, DropdownItemConfig m)]  -- ^ Items
+  -> [DropdownOptFlag]            -- ^ Options
+  -> DropdownConf t (Maybe a)     -- ^ Dropdown config
+  -> m (Event t (Maybe a), Dynamic t (Maybe a))
+uiDropdownCombo btns items options config = do
+  divClass buttonsClass $ do
+    btnE <- uiButton def $ text $ _dropdownConf_placeholder config
+    dd <- uiDropdown items options $
+            config & dropdownConf_action .~ DACombo
+                   & dropdownConf_button ?~ custom "icon" def
+    return (tag (current dd) btnE, dd)
+
+  where
+    buttonsClass = T.unwords ["ui", uiButtonAttrs btns, "buttons"]
+
 -- | Internal function with shared behaviour
 dropdownInternal
   :: (MonadWidget t m, Eq a)
@@ -433,8 +521,8 @@ dropdownInternal items options isMulti config = do
 
     -- This holds the placeholder. Initial value must be set by js function in
     -- wrapper.
-    divClass "default text" $ text $ placeholder
-    elAttr "i" ("class" =: "dropdown icon") blank
+    divClass placeholderClass $ text $ placeholder
+    elAttr "i" ("class" =: T.unwords [icon, "icon"]) blank
 
     -- Dropdown menu
     divClass "menu" $ sequence_ $ imap putItem items
@@ -444,12 +532,18 @@ dropdownInternal items options isMulti config = do
 
   -- Activate the dropdown after element is built
   schedulePostBuild $ liftJSM $
-    activateDropdown (_element_raw divEl) maxSel useLabels fullText $
+    activateDropdown (_element_raw divEl) action maxSel useLabels fullText $
       liftIO . onChangeCallback
 
   return (divEl, onChangeEvent)
 
   where
+    btnClasses = maybe "" (\x -> " " <> uiButtonAttrs x <> " button") $
+                   _dropdownConf_button config
+    placeholderClass = if elem DOFSelection options then "default text"
+                                                    else "text"
+    action = dropdownAction $ _dropdownConf_action config
+    icon = _dropdownConf_icon config
     useLabels = _dropdownConf_useLabels config
     fullText = _dropdownConf_fullTextSearch config
     placeholder = _dropdownConf_placeholder config
@@ -457,10 +551,9 @@ dropdownInternal items options isMulti config = do
     maxSel = if isMulti then _dropdownConf_maxSelections config
                         else Nothing
     multiClass = if isMulti then " multiple" else ""
-    classes = dropdownClass options <> multiClass
+    classes = dropdownClass options <> multiClass <> btnClasses
     itemDiv i a = elAttr "div"
       ("class" =: "item" <> "data-value" =: tshow i <> a)
     putItem i (_, conf) = case conf of
       DropdownItemConfig "" m -> itemDiv i mempty m
       DropdownItemConfig t m -> itemDiv i ("data-text" =: t) m
-

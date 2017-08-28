@@ -69,6 +69,11 @@ renderCard card = do
   elClass "i" (T.toLower (tshow card) <> " icon") blank
   text $ showCard card
 
+-- | File menu
+data FileEnum = New | Open | SaveAs | Close
+  deriving (Bounded, Enum, Eq, Ord, Read, Show)
+
+
 checkboxes :: MonadWidget t m => m ()
 checkboxes = do
 
@@ -130,6 +135,70 @@ dropdowns = do
         states = map makeState [minBound..maxBound]
         makeCountry x = (x, DropdownItemConfig "" $ renderCountry x)
         countries = map makeCountry [minBound..maxBound]
+        fileMenu = [ (New, DropdownItemConfig "" $ do
+                       uiIcon "file" def
+                       text "New")
+                   , (Open, DropdownItemConfig "" $ do
+                       uiIcon "folder open" def
+                       text "Open...")
+                   , (SaveAs, DropdownItemConfig "" $ do
+                       uiIcon "save" def
+                       text "Save as...")
+                   , (Close, DropdownItemConfig "" $ do
+                       text "Close")
+                   ]
+
+    divClass "four fields" $ do
+      divClass "field" $ do
+        el "label" $ text "A dropdown"
+        uiDropdown fileMenu [] $
+          def & dropdownConf_placeholder .~ "File"
+              & dropdownConf_action .~ DASelect
+        return ()
+      divClass "field" $ do
+        el "label" $ text "Button, floating"
+        uiDropdown' fileMenu [DOFFloating] $
+          def & dropdownConf_placeholder .~ "File"
+              & setValue .~ (Nothing <$ resetEvent)
+              & dropdownConf_action .~ DASelect
+              & dropdownConf_button ?~ basic def
+        return ()
+      divClass "field" $ do
+        el "label" $ text "Button, selection"
+        uiDropdown' fileMenu [DOFFloating] $
+          def & dropdownConf_initialValue ?~ Open
+              & setValue .~ (Just Open <$ resetEvent)
+              & dropdownConf_button ?~ basic def
+        return ()
+      divClass "field" $ do
+        el "label" $ text "Combo"
+        uiDropdownCombo (basic def) fileMenu [DOFPointing UiTopRightPointing] $
+          def & dropdownConf_initialValue ?~ Open
+              & setValue .~ (Just Open <$ resetEvent)
+        return ()
+
+    divClass "two fields" $ do
+      divClass "field" $ do
+        el "label" $ text "Icon"
+        uiDropdown' fileMenu [DOFPointing UiTopLeftPointing] $
+          def & dropdownConf_action .~ DASelect
+              & dropdownConf_icon .~ "wrench"
+              & dropdownConf_button ?~ (basic $ custom "icon" def)
+        return ()
+
+      divClass "field" $ do
+        el "label" $ text "Pointing"
+        let pointingDropdownEx i p =
+              uiDropdown' fileMenu [p] $
+                def & dropdownConf_action .~ DASelect
+                    & dropdownConf_icon .~ i
+                    & dropdownConf_button ?~ (basic $ custom "icon" def)
+
+        pointingDropdownEx "arrow left" $ DOFPointing UiRightPointing
+        pointingDropdownEx "arrow down" $ DOFPointing UiTopLeftPointing
+        pointingDropdownEx "arrow up" $ DOFPointing UiBottomRightPointing
+        pointingDropdownEx "arrow right" $ DOFPointing UiLeftPointing
+        return ()
 
     divClass "two fields" $ do
       divClass "field" $ do
