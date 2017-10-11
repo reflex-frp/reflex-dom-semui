@@ -46,8 +46,9 @@ foreign import javascript unsafe
 #else
 activateCheckbox e onChange = do
   o <- obj
-  o ^. jss ("onChange"::Text) (fun $ \_ _ [t, _, _] ->
-    onChange =<< fromJSValUnchecked t)
+  o ^. jss ("onChange"::Text) (fun $ \_ _ _ -> do
+    isChecked <- jsg1 ("$"::Text) e ^. js1 ("checkbox"::Text) ("is checked"::Text)
+    onChange =<< fromJSValUnchecked isChecked)
   void $ jsg1 ("$"::Text) e ^. js1 ("checkbox"::Text) o
 #endif
 
