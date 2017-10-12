@@ -50,6 +50,9 @@ instance (UiClassText a, UiClassText b) => UiClassText (Either a b) where
   uiText (Left a) = uiText a
   uiText (Right b) = uiText b
 
+instance UiClassText a => UiClassText [a] where
+  uiText = T.unwords . map uiText
+
 class UiHasCustom a where
   -- | IMPORTANT: Implementations of this function should use the accompanying
   -- 'addCustom' function to make sure that new values are added on and don't
@@ -408,4 +411,3 @@ class UiHasFloated a where
 leftFloated, rightFloated :: UiHasFloated a => a -> a
 leftFloated = uiSetFloated UiLeftFloated
 rightFloated = uiSetFloated UiRightFloated
-
