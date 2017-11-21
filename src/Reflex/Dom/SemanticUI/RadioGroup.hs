@@ -47,7 +47,7 @@ activateRadio :: DOM.Element -> JSM ()
 #ifdef ghcjs_HOST_OS
 activateRadio = js_activateRadio
 foreign import javascript unsafe
-  "$($1).checkbox();"
+  "jQuery($1)['checkbox']();"
   js_activateRadio :: DOM.Element -> JSM ()
 #else
 activateRadio e =
@@ -62,7 +62,7 @@ setRadioCallbacks es f = do
   els <- toJSVal es
   js_setRadioCallbacks els cb
 foreign import javascript unsafe
-  "$($1).on('change', function() { $2($($1).filter(':checked').val()); });"
+  "jQuery($1)['on']('change', function() { $2(jQuery($1)['filter'](':checked')['val']()); });"
   js_setRadioCallbacks :: JSVal -> Callback (JSVal -> JSM ()) -> JSM ()
 #else
 setRadioCallbacks es onChange = do
@@ -82,11 +82,11 @@ setRadioGroup es mval = do
     Nothing -> js_clearRadioGroup els *> return Nothing
     Just val -> (readMaybe <=< pFromJSVal) <$> js_setRadioGroup els val
 foreign import javascript unsafe
-  "$($1).prop('checked', false);"
+  "jQuery($1)['prop']('checked', false);"
   js_clearRadioGroup :: JSVal -> JSM ()
 foreign import javascript unsafe
-  "$($1).filter('[value=' + $2 + ']').prop('checked', true);\
-   $r = $($1).filter(':checked').val();"
+  "jQuery($1)['filter']('[value=' + $2 + ']')['prop']('checked', true);\
+   $r = jQuery($1)['filter'](':checked')['val']();"
   js_setRadioGroup :: JSVal -> JSVal -> JSM JSVal
 #else
 setRadioGroup es Nothing =

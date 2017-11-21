@@ -39,8 +39,8 @@ activateCheckbox e onChange = do
   cb <- asyncCallback1 $ onChange . pFromJSVal
   js_activateCheckbox e cb
 foreign import javascript unsafe
-  "$($1).checkbox({ onChange: function() { \
-    $2($($1).checkbox('is checked')); \
+  "jQuery($1)['checkbox']({ onChange: function() { \
+    $2($($1)['checkbox']('is checked')); \
   } });"
   js_activateCheckbox :: DOM.Element -> Callback (JSVal -> JSM ()) -> JSM ()
 #else
@@ -61,10 +61,10 @@ setCheckboxValue e False = uncheckCheckbox e
 
 #ifdef ghcjs_HOST_OS
 foreign import javascript unsafe
-  "$($1).checkbox('check');"
+  "jQuery($1)['checkbox']('check');"
   checkCheckbox :: DOM.Element -> JSM ()
 foreign import javascript unsafe
-  "$($1).checkbox('uncheck');"
+  "jQuery($1)['checkbox']('uncheck');"
   uncheckCheckbox :: DOM.Element -> JSM ()
 #else
 checkCheckbox, uncheckCheckbox :: DOM.Element -> JSM ()

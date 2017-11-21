@@ -59,7 +59,7 @@ activateSemUiDropdown :: Text -> JSM ()
 activateSemUiDropdown = js_activateSemUiDropdown . toJSString
 
 foreign import javascript unsafe
-  "$($1).dropdown({fullTextSearch: true});"
+  "jQuery($1)['dropdown']({fullTextSearch: true});"
   js_activateSemUiDropdown :: JSString -> JSM ()
 #else
 activateSemUiDropdown name = do
@@ -70,7 +70,7 @@ activateSemUiDropdown name = do
 
 #ifdef ghcjs_HOST_OS
 foreign import javascript unsafe
-  "$($1).dropdown({fullTextSearch: true});"
+  "jQuery($1)['dropdown']({fullTextSearch: true});"
   activateSemUiDropdownEl :: DOM.Element -> JSM ()
 #else
 activateSemUiDropdownEl :: DOM.Element -> JSM ()
@@ -114,7 +114,7 @@ activateSemUiDropdownMulti' name onChange full = do
   js_activateSemUiDropdownMulti name jscb full
 
 foreign import javascript unsafe
-  "(function(){ $($1).dropdown({onChange: $2, fullTextSearch: $3}); })()"
+  "(function(){ jQuery($1)['dropdown']({onChange: $2, fullTextSearch: $3}); })()"
   js_activateSemUiDropdownMulti
     :: JSString
     -> Callback (JSVal -> JSVal -> JSVal -> JSM ())
@@ -284,11 +284,11 @@ activateDropdown e mMaxSel useLabels fullText onChange = do
   let maxSel = maybe (pToJSVal False) pToJSVal mMaxSel
   js_activateDropdown e maxSel useLabels fullText cb
 foreign import javascript unsafe
-  "$($1).dropdown({ forceSelection : false \
-                  , maxSelections: $2 \
-                  , useLabels: $3 \
-                  , fullTextSearch: $4 \
-                  , onChange: function(value){ $5(value); } });"
+  "jQuery($1)['dropdown']({ forceSelection : false \
+                          , maxSelections: $2 \
+                          , useLabels: $3 \
+                          , fullTextSearch: $4 \
+                          , onChange: function(value){ $5(value); } });"
   js_activateDropdown :: DOM.Element -> JSVal -> Bool -> Bool
                       -> Callback (JSVal -> JSM ()) -> JSM ()
 #else
@@ -312,7 +312,7 @@ dropdownSetExactly e is = do
   js_dropdownSetExactly e jsVal
 
 foreign import javascript unsafe
-  "$($1).dropdown('set exactly', $2);"
+  "jQuery($1)['dropdown']('set exactly', $2);"
   js_dropdownSetExactly :: DOM.Element -> JSVal -> JSM ()
 #else
 dropdownSetExactly e is =

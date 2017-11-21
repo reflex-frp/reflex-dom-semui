@@ -85,7 +85,7 @@ uiTriggerModalAction e beh = js_modalAction e
                         (DOM.toJSString $ modalBehaviorString beh)
 
 #ifdef ghcjs_HOST_OS
-foreign import javascript unsafe "$($1).modal($2);"
+foreign import javascript unsafe "jQuery($1)['modal']($2);"
     js_modalAction :: DOM.Element -> DOM.JSString -> IO ()
 #else
 js_modalAction :: DOM.Element -> DOM.JSString -> DOM.JSM ()
