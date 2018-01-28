@@ -4,7 +4,7 @@ license:             BSD3
 license-file:        LICENSE
 synopsis:            A reflex-dom API for semantic-ui components
 description:         This package provides a Reflex wrapper around the
-                     Semantit UI components. The goal is to make it fast
+                     Semantic UI components. The goal is to make it fast
                      and easy to build nice looking applications and make
                      Semantic UI functionality a lot more discoverable.
 author:              Doug Beardsley
