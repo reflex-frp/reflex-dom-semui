@@ -141,6 +141,10 @@ uiCheckbox' label config = do
   schedulePostBuild $ liftJSM $
     activateCheckbox (_element_raw cbEl) $ liftIO . onChangeCallback
 
+  -- Allow the value to be set
+  let setCbVal = setCheckboxValue (_element_raw cbEl)
+  performEvent_ $ liftJSM . setCbVal <$> _checkboxConf_setValue config
+
   cb <- holdDyn (M.member "checked" attrs) onChangeEvent
   return (cbEl, Checkbox cb onChangeEvent)
 
