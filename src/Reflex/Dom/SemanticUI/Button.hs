@@ -1,5 +1,5 @@
-{-# LANGUAGE ConstraintKinds          #-}
 {-# LANGUAGE CPP                      #-}
+{-# LANGUAGE ConstraintKinds          #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
@@ -17,12 +17,13 @@ module Reflex.Dom.SemanticUI.Button where
 ------------------------------------------------------------------------------
 import           Data.Default
 import           Data.Maybe
-import           Data.Text (Text)
-import qualified Data.Text as T
+import           Data.Monoid
+import           Data.Text       (Text)
+import qualified Data.Text       as T
 import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------
-import           Reflex.Dom.SemanticUI.Common
-import           Reflex.Dom.SemanticUI.Icon
+import Reflex.Dom.SemanticUI.Common
+import Reflex.Dom.SemanticUI.Icon
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
@@ -44,7 +45,7 @@ data UiButton = UiButton
     , _uiButton_toggle     :: Maybe UiToggle
     , _uiButton_fluid      :: Maybe UiFluid
     , _uiButton_circular   :: Maybe UiCircular
-    , _uiButton_floated   :: Maybe UiFloated
+    , _uiButton_floated    :: Maybe UiFloated
     , _uiButton_custom     :: Maybe Text
     } deriving (Eq,Show)
 
@@ -93,6 +94,18 @@ instance UiHasFloated UiButton where
 instance UiHasCustom UiButton where
   custom s i = i { _uiButton_custom = addCustom s (_uiButton_custom i) }
 
+
+data UiButtonType = UiSimpleButton | UiSubmitButton | UiResetButton
+                  deriving (Eq,Ord,Read,Show,Enum,Bounded)
+
+instance Default UiButtonType where def = UiSimpleButton
+
+buttonTypeAttrValue :: UiButtonType -> Text
+buttonTypeAttrValue x = case x of
+  UiSimpleButton -> "button"
+  UiSubmitButton -> "submit"
+  UiResetButton  -> "reset"
+
 ------------------------------------------------------------------------------
 -- | Helper function mostly intended for internal use.  Exported for
 -- completeness.
@@ -124,14 +137,16 @@ uiButtonAttrs UiButton{..} = T.unwords $ catMaybes
 -- provided by other functions such as 'uiButtonAnimated'.
 uiButton
     :: MonadWidget t m
-    => Dynamic t UiButton
+    => UiButtonType
+    -> Dynamic t UiButton
     -> m ()
     -> m (Event t ())
-uiButton bDyn children = do
+uiButton bType bDyn children = do
     (e,_) <- elDynAttr' "button" (mkAttrs <$> bDyn) children
     return $ domEvent Click e
   where
     mkAttrs b = "class" =: T.unwords ["ui", uiButtonAttrs b, "button"]
+             <> "type"  =: buttonTypeAttrValue bType
 
 data UiButtonAnimationType
   = HorizontalAnimation
@@ -141,14 +156,15 @@ data UiButtonAnimationType
 
 instance UiClassText UiButtonAnimationType where
    uiText HorizontalAnimation = "animated"
-   uiText VerticalAnimation = "vertical animated"
-   uiText FadeAnimation = "animated fade"
+   uiText VerticalAnimation   = "vertical animated"
+   uiText FadeAnimation       = "animated fade"
 
 ------------------------------------------------------------------------------
 -- | Implements animated buttons that change when you hover over them.
 uiButtonAnimated
     :: MonadWidget t m
-    => UiButtonAnimationType
+    => UiButtonType
+    -> UiButtonAnimationType
     -- ^ Controls the type of the animation
     -> Dynamic t UiButton
     -> m ()
@@ -156,30 +172,32 @@ uiButtonAnimated
     -> m ()
     -- ^ The hidden section
     -> m (Event t ())
-uiButtonAnimated anim bDyn visible hidden = do
+uiButtonAnimated bType anim bDyn visible hidden = do
     (e,_) <- elDynAttr' "button" (mkAttrs <$> bDyn) $ do
       divClass "visible content" visible
       divClass "hidden content" hidden
     return $ domEvent Click e
   where
     mkAttrs b = "class" =: T.unwords ["ui", uiButtonAttrs b, uiText anim, "button"]
+             <> "type"  =: buttonTypeAttrValue bType
 
 ------------------------------------------------------------------------------
 -- | Implements a labeled icon button.  The icon can be on the left or the
 -- right and this widget uses the Either type to indicate that.
 uiLabeledIconButton
     :: MonadWidget t m
-    => Either Text Text
+    => UiButtonType
+    -> Either Text Text
     -> Dynamic t UiButton
     -> Dynamic t UiIcon
     -> m ()
     -> m (Event t ())
-uiLabeledIconButton iconType bDyn iDyn children = do
-    uiButton (custom (eText $ setE "labeled" iconType) <$> bDyn) $ do
+uiLabeledIconButton bType iconType bDyn iDyn children =
+    uiButton bType (custom (eText $ setE "labeled" iconType) <$> bDyn) $ do
       uiIcon (eText iconType) iDyn
       children
   where
-    eText (Left t) = t
+    eText (Left t)  = t
     eText (Right t) = T.unwords ["right", t]
-    setE a (Left _) = Left a
+    setE a (Left _)  = Left a
     setE a (Right _) = Right a
