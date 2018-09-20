@@ -18,11 +18,9 @@ module Reflex.Dom.SemanticUI.Modal where
 import           Control.Monad.Trans
 import           Data.Text (Text)
 import qualified GHCJS.DOM.Types as DOM
-#ifndef ghcjs_HOST_OS
 import           Control.Monad (void)
 import           Control.Lens.Operators ((^.))
 import           Language.Javascript.JSaddle.Object (js1, jsg1)
-#endif
 import           Reflex.Dom.Core
 ------------------------------------------------------------------------------
 
@@ -84,12 +82,6 @@ uiTriggerModalAction :: DOM.Element -> ModalBehavior -> DOM.JSM ()
 uiTriggerModalAction e beh = js_modalAction e
                         (DOM.toJSString $ modalBehaviorString beh)
 
-#ifdef ghcjs_HOST_OS
-foreign import javascript unsafe "jQuery($1)['modal']($2);"
-    js_modalAction :: DOM.Element -> DOM.JSString -> IO ()
-#else
 js_modalAction :: DOM.Element -> DOM.JSString -> DOM.JSM ()
 js_modalAction e beh =
   void $ jsg1 ("$"::Text) e ^. js1 ("modal"::Text) beh
-#endif
-

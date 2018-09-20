@@ -41,19 +41,15 @@ library
     , containers
     , data-default
     , file-embed >= 0.0.10 && < 0.1
+    , ghcjs-base
     , ghcjs-dom
+    , jsaddle >= 0.8.0.0 && < 0.10
     , lens
     , mtl
     , reflex     >= 0.5 && < 0.6
     , reflex-dom-core >= 0.4 && < 0.5
     , text
 
-  if impl(ghcjs)
-    build-depends: ghcjs-base
-  else
-    build-depends:
-        jsaddle >= 0.8.0.0 && < 0.10
-      , lens
 
   ghc-options: -Wall -fno-warn-unused-do-bind -fno-warn-orphans
   cpp-options: -D_GHCJS_ -DGHCJS_GC_INTERVAL=60000
