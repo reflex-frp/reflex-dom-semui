@@ -21,17 +21,10 @@ import           Data.Monoid ((<>))
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified GHCJS.DOM.Element as DOM
-#ifdef ghcjs_HOST_OS
-import Control.Monad ((<=<))
-import GHCJS.DOM.Types (liftJSM, JSVal, pFromJSVal, pToJSVal, toJSVal, JSM)
-import GHCJS.Foreign.Callback (Callback, asyncCallback1)
-import Text.Read (readMaybe)
-#else
 import Control.Monad (void)
 import GHCJS.DOM.Types (liftJSM, JSM, fromJSValUnchecked)
 import Language.Javascript.JSaddle.Object (fun, js0, js1, js2, jsg1)
 import Control.Lens.Operators ((^.))
-#endif
 import           Reflex
 import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------

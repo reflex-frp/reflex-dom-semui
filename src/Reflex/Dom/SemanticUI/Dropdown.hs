@@ -30,18 +30,11 @@ import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified GHCJS.DOM.Element as DOM
 import           Text.Read (readMaybe)
-#ifdef ghcjs_HOST_OS
-import GHCJS.DOM.Types
-       (liftJSM, JSString, JSVal, toJSString, fromJSString, pFromJSVal,
-        pToJSVal, toJSVal, JSM, fromJSValUnchecked)
-import GHCJS.Foreign.Callback (Callback, asyncCallback1, asyncCallback3)
-#else
 import GHCJS.DOM.Types
        (liftJSM, JSString, toJSString, JSM, fromJSValUnchecked)
 import Language.Javascript.JSaddle.Object
        (fun, js1, js2, jsg1, jss, obj)
 import Control.Lens.Operators ((^.))
-#endif
 import           Reflex
 --import           Reflex.Host.Class
 import           Reflex.Dom.Core hiding (fromJSString)

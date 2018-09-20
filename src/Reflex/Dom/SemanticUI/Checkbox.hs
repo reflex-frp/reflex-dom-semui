@@ -16,15 +16,10 @@ import qualified Data.Map as M
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified GHCJS.DOM.Element as DOM
-#ifdef ghcjs_HOST_OS
-import GHCJS.DOM.Types (liftJSM, JSVal, pFromJSVal, JSM)
-import GHCJS.Foreign.Callback (Callback, asyncCallback1)
-#else
 import GHCJS.DOM.Types (liftJSM, JSM, fromJSValUnchecked)
 import Language.Javascript.JSaddle.Object (fun, js1, jsg1, jss, obj)
 import Control.Lens.Operators ((^.))
 import Control.Monad (void)
-#endif
 import           Reflex
 import           Reflex.Dom.Core hiding (fromJSString)
 ------------------------------------------------------------------------------
