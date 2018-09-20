@@ -44,51 +44,19 @@ import           Reflex.Dom.SemanticUI.Common
 -- because they don't notify when a radio is automatically de-selected, so
 -- instead we manually put on change listeners to the individual radio items.
 activateRadio :: DOM.Element -> JSM ()
-#ifdef ghcjs_HOST_OS
-activateRadio = js_activateRadio
-foreign import javascript unsafe
-  "jQuery($1)['checkbox']();"
-  js_activateRadio :: DOM.Element -> JSM ()
-#else
-activateRadio e =
-  void $ jsg1 ("$"::Text) e ^. js0 ("dropdown"::Text)
-#endif
+activateRadio e = void $ jsg1 ("$"::Text) e ^. js0 ("dropdown"::Text)
 
 -- | Given a list of radio checkboxes, setup onChange callbacks
 setRadioCallbacks :: [DOM.Element] -> (Maybe Int -> JSM ()) -> JSM ()
-#ifdef ghcjs_HOST_OS
-setRadioCallbacks es f = do
-  cb <- asyncCallback1 $ f . (\x -> readMaybe =<< pFromJSVal x)
-  els <- toJSVal es
-  js_setRadioCallbacks els cb
-foreign import javascript unsafe
-  "jQuery($1)['on']('change', function() { $2(jQuery($1)['filter'](':checked')['val']()); });"
-  js_setRadioCallbacks :: JSVal -> Callback (JSVal -> JSM ()) -> JSM ()
-#else
 setRadioCallbacks es onChange = do
   checked <- jsg1 ("$"::Text) es
           ^. js1 ("filter"::Text) (":checked"::Text)
           ^. js0 ("val"::Text)
   let cb = fun $ \_ _ [] -> onChange =<< fromJSValUnchecked checked
   void $ jsg1 ("$"::Text) es ^. js2 ("on"::Text) ("change"::Text) cb
-#endif
 
 -- | Set the current value of a radio group.
 setRadioGroup :: [DOM.Element] -> Maybe Int -> JSM (Maybe Int)
-#ifdef ghcjs_HOST_OS
-setRadioGroup es mval = do
-  els <- toJSVal es
-  case pToJSVal <$> mval of
-    Nothing -> js_clearRadioGroup els *> return Nothing
-    Just val -> (readMaybe <=< pFromJSVal) <$> js_setRadioGroup els val
-foreign import javascript unsafe
-  "jQuery($1)['prop']('checked', false);"
-  js_clearRadioGroup :: JSVal -> JSM ()
-foreign import javascript unsafe
-  "jQuery($1)['filter']('[value=' + $2 + ']')['prop']('checked', true);\
-   $r = jQuery($1)['filter'](':checked')['val']();"
-  js_setRadioGroup :: JSVal -> JSVal -> JSM JSVal
-#else
 setRadioGroup es Nothing =
   Nothing <$ jsg1 ("$"::Text) es ^. js2 ("prop"::Text) ("checked"::Text) False
 setRadioGroup es (Just val) = do
@@ -99,7 +67,6 @@ setRadioGroup es (Just val) = do
     ^. js1 ("filter"::Text) (":checked"::Text)
     ^. js0 ("val"::Text)
   fromJSValUnchecked selected
-#endif
 
 ------------------------------------------------------------------------------
 

@@ -34,23 +34,12 @@ import           Reflex.Dom.SemanticUI.Common (UiClassText(..))
 -- | Given a div element, tell semantic-ui to convert it to a checkbox with the
 -- given options. The callback function is called on change with the new state.
 activateCheckbox :: DOM.Element -> (Bool -> JSM ()) -> JSM ()
-#ifdef ghcjs_HOST_OS
-activateCheckbox e onChange = do
-  cb <- asyncCallback1 $ onChange . pFromJSVal
-  js_activateCheckbox e cb
-foreign import javascript unsafe
-  "jQuery($1)['checkbox']({ onChange: function() { \
-    $2($($1)['checkbox']('is checked')); \
-  } });"
-  js_activateCheckbox :: DOM.Element -> Callback (JSVal -> JSM ()) -> JSM ()
-#else
 activateCheckbox e onChange = do
   o <- obj
   o ^. jss ("onChange"::Text) (fun $ \_ _ _ -> do
     isChecked <- jsg1 ("$"::Text) e ^. js1 ("checkbox"::Text) ("is checked"::Text)
     onChange =<< fromJSValUnchecked isChecked)
   void $ jsg1 ("$"::Text) e ^. js1 ("checkbox"::Text) o
-#endif
 
 -- | Given an initialised checkbox element, set the state to the given value.
 -- The act of setting the state calls any callbacks, so the value stays
@@ -59,20 +48,11 @@ setCheckboxValue :: DOM.Element -> Bool -> JSM ()
 setCheckboxValue e True = checkCheckbox e
 setCheckboxValue e False = uncheckCheckbox e
 
-#ifdef ghcjs_HOST_OS
-foreign import javascript unsafe
-  "jQuery($1)['checkbox']('check');"
-  checkCheckbox :: DOM.Element -> JSM ()
-foreign import javascript unsafe
-  "jQuery($1)['checkbox']('uncheck');"
-  uncheckCheckbox :: DOM.Element -> JSM ()
-#else
 checkCheckbox, uncheckCheckbox :: DOM.Element -> JSM ()
 checkCheckbox e
   = void $ jsg1 ("$"::Text) e ^. js1 ("checkbox"::Text) ("check"::Text)
 uncheckCheckbox e
   = void $ jsg1 ("$"::Text) e ^. js1 ("checkbox"::Text) ("uncheck"::Text)
-#endif
 
 --------------------------------------------------------------------------------
 

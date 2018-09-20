@@ -55,30 +55,16 @@ enumItemMap from to = map (\a -> (a, T.pack $ show a)) [from..to]
 
 ------------------------------------------------------------------------------
 activateSemUiDropdown :: Text -> JSM ()
-#ifdef ghcjs_HOST_OS
-activateSemUiDropdown = js_activateSemUiDropdown . toJSString
-
-foreign import javascript unsafe
-  "jQuery($1)['dropdown']({fullTextSearch: true});"
-  js_activateSemUiDropdown :: JSString -> JSM ()
-#else
 activateSemUiDropdown name = do
   o <- obj
   o ^. jss ("fullTextSearch"::Text) True
   void $ jsg1 ("$"::Text) name ^. js1 ("dropdown"::Text) o
-#endif
 
-#ifdef ghcjs_HOST_OS
-foreign import javascript unsafe
-  "jQuery($1)['dropdown']({fullTextSearch: true});"
-  activateSemUiDropdownEl :: DOM.Element -> JSM ()
-#else
 activateSemUiDropdownEl :: DOM.Element -> JSM ()
 activateSemUiDropdownEl e = do
   o <- obj
   o ^. jss ("fullTextSearch"::Text) True
   void $ jsg1 ("$"::Text) e ^. js1 ("dropdown"::Text) o
-#endif
 
 data DropdownMulti t a = DropdownMulti
     { _dm_value :: Dynamic t a
@@ -106,28 +92,12 @@ activateSemUiDropdownMulti dmc = do
     val <- holdDyn (_dmc_initialValue dmc) e
     return $! DropdownMulti val
 
-#ifdef ghcjs_HOST_OS
-activateSemUiDropdownMulti' :: JSString -> (String -> JSM ()) -> Bool -> JSM ()
-activateSemUiDropdownMulti' name onChange full = do
-  jscb <- asyncCallback3 $ \_ t _ -> liftIO $
-    onChange $ fromJSString $ pFromJSVal t
-  js_activateSemUiDropdownMulti name jscb full
-
-foreign import javascript unsafe
-  "(function(){ jQuery($1)['dropdown']({onChange: $2, fullTextSearch: $3}); })()"
-  js_activateSemUiDropdownMulti
-    :: JSString
-    -> Callback (JSVal -> JSVal -> JSVal -> JSM ())
-    -> Bool
-    -> JSM ()
-#else
 activateSemUiDropdownMulti' :: JSString -> (String -> JSM ()) -> Bool -> JSM ()
 activateSemUiDropdownMulti' name onChange full = do
   o <- obj
   o ^. jss ("onChange"::Text) (fun $ \_ _ [_, t, _] -> onChange =<< fromJSValUnchecked t)
   o ^. jss ("fullTextSearch"::Text) full
   void $ jsg1 ("$"::Text) name ^. js1 ("dropdown"::Text) o
-#endif
 
 -- Multi-select sem-ui dropdown is not working properly yet.  Not sure how
 -- to get the current value.
@@ -278,20 +248,6 @@ semUiDropdownWithItems elId opts iv vals attrs = do
 -- selected value.
 activateDropdown :: DOM.Element -> Maybe Int -> Bool -> Bool
                  -> (Text -> JSM ()) -> JSM ()
-#ifdef ghcjs_HOST_OS
-activateDropdown e mMaxSel useLabels fullText onChange = do
-  cb <- asyncCallback1 $ onChange . pFromJSVal
-  let maxSel = maybe (pToJSVal False) pToJSVal mMaxSel
-  js_activateDropdown e maxSel useLabels fullText cb
-foreign import javascript unsafe
-  "jQuery($1)['dropdown']({ forceSelection : false \
-                          , maxSelections: $2 \
-                          , useLabels: $3 \
-                          , fullTextSearch: $4 \
-                          , onChange: function(value){ $5(value); } });"
-  js_activateDropdown :: DOM.Element -> JSVal -> Bool -> Bool
-                      -> Callback (JSVal -> JSM ()) -> JSM ()
-#else
 activateDropdown e maxSel useLabels fullText onChange = do
   o <- obj
   o ^. jss ("forceSelection"::Text) False
@@ -301,23 +257,12 @@ activateDropdown e maxSel useLabels fullText onChange = do
   o ^. jss ("onChange"::Text) (fun $ \_ _ [t, _, _] ->
     onChange =<< fromJSValUnchecked t)
   void $ jsg1 ("$"::Text) e ^. js1 ("dropdown"::Text) o
-#endif
 
 -- | Given a dropdown element, set the value to the given list. For single
 -- dropdowns just provide a singleton list.
 dropdownSetExactly :: DOM.Element -> [Int] -> JSM ()
-#ifdef ghcjs_HOST_OS
-dropdownSetExactly e is = do
-  jsVal <- toJSVal $ map tshow is
-  js_dropdownSetExactly e jsVal
-
-foreign import javascript unsafe
-  "jQuery($1)['dropdown']('set exactly', $2);"
-  js_dropdownSetExactly :: DOM.Element -> JSVal -> JSM ()
-#else
 dropdownSetExactly e is =
   void $ jsg1 ("$"::Text) e ^. js2 ("dropdown"::Text) ("set exactly"::Text) is
-#endif
 
 ------------------------------------------------------------------------------
 
